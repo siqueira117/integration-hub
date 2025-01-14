@@ -1,0 +1,16 @@
+{
+    "name": "erick/integration-hub",
+    "description": "Ecossistema para realizar integrações",
+    "autoload": {
+        "psr-4": {
+            "IntegrationHub\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Erick Siqueira",
+            "email": "erick.siqueira117@gmail.com"
+        }
+    ],
+    "require": {}
+}
