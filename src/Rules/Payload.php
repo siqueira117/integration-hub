@@ -1,6 +1,6 @@
 <?php
 
-namespace Rules;
+namespace IntegrationHub\Rules;
 
 use DateTime;
 use Exception\FieldNotExistsException;
@@ -64,6 +64,10 @@ class Payload
 
     public function getContratacao(): string 
     {
+        if (!array_key_exists("tipo_contratacao", $this->payload)) {
+            throw new FieldNotExistsException("Campo 'tipo_contratacao' não existe no payload informado");
+        }
+        
         return $this->payload["contrato"]["tipo_contratacao"];
     }
 

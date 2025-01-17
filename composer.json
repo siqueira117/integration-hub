@@ -3,8 +3,12 @@
     "description": "Ecossistema para realizar integrações",
     "autoload": {
         "psr-4": {
-            "IntegrationHub\\": "src/"
-        }
+            "IntegrationHub\\": "src/",
+            "Tests\\": "tests/"
+        },
+        "files": [
+            "src/Constants/IntegrationTypes.php"
+        ]
     },
     "authors": [
         {
@@ -12,5 +16,10 @@
             "email": "erick.siqueira117@gmail.com"
         }
     ],
-    "require": {}
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
+    "scripts": {
+        "tests": "phpunit"
+    }
 }
