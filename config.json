@@ -1,0 +1,7 @@
+{
+    "hml": {
+        "endpoint": "https://webservice-hml.dourados.sgusuite.com.br/api/sgu20/amc/efetivavenda",
+        "token": "YUyNyhxLjQ3GRwN8OAaFTTvLk1eYH5t4HQIvSksQEek8ZEZ3Bz2G8MPVwp48",
+        "method": "POST"
+    }
+}

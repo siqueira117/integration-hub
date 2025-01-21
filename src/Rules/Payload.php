@@ -3,7 +3,7 @@
 namespace IntegrationHub\Rules;
 
 use DateTime;
-use Exception\FieldNotExistsException;
+use IntegrationHub\Exception\FieldNotExistsException;
 
 class Payload
 {
@@ -64,7 +64,7 @@ class Payload
 
     public function getContratacao(): string 
     {
-        if (!array_key_exists("tipo_contratacao", $this->payload)) {
+        if (!array_key_exists("tipo_contratacao", $this->payload["contrato"])) {
             throw new FieldNotExistsException("Campo 'tipo_contratacao' não existe no payload informado");
         }
         

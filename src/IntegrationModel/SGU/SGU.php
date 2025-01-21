@@ -2,6 +2,9 @@
 
 namespace IntegrationHub\IntegrationModel\SGU;
 
+use App\Helpers\CurlRequest;
+use IntegrationHub\Exception\CurlRequestException;
+use IntegrationHub\Exception\ValidationException;
 use IntegrationHub\IntegrationModel\AbstractIntegrationModel;
 
 class SGU extends AbstractIntegrationModel {
@@ -21,7 +24,10 @@ class SGU extends AbstractIntegrationModel {
         syslog(LOG_NOTICE, __METHOD__);
         $empresa = $this->payload->getEmpresa(); 
     
-        $this->validator->validatePayloadEmpresa();
+        $validations = $this->validator->validatePayloadEmpresa($empresa);
+        if ($validations) {
+            throw new ValidationException("[PAYLOAD] Erro na validação de empresa: " . json_encode($validations));
+        }
         
         $empTemp = [
             "cnpj"                      => $empresa["cnpj"],
@@ -30,11 +36,13 @@ class SGU extends AbstractIntegrationModel {
             "pessoa_responsavel_cpf"    => $empresa["responsavel"]["cpf"],
             "tipo_societario"           => $this->parameters->getTipoSocietario($empresa["porte"]),
             "nome_fantasia"             => $empresa["nomefantasia"] ?? $empresa["razaosocial"],
-            "inscricao_estadual"        => "",
-            "inscricao_municipal"       => "",
+            "inscricao_estadual"        => $empresa["inscricaoestadual"],
+            "inscricao_municipal"       => $empresa["inscricaomunicipal"],
             "cnae"                      => $this->buildCNAE($empresa["cnae"]),
             "enderecos"                 => $this->buildEnderecos($empresa)
-        ];           
+        ];
+        
+        return $empTemp;
     }
 
     private function buildCNAE(string $cnae): array 
@@ -48,9 +56,9 @@ class SGU extends AbstractIntegrationModel {
         ];
     }
 
-    private function buildEnderecos(array $entidade): array 
+    private function buildEnderecos(array $empresa): array 
     {
-        [
+        return [
             [
                 "cep"               => $empresa["endereco1"]["cep"],
                 "logradouro"        => $empresa["endereco1"]["logradouro"],
@@ -68,6 +76,33 @@ class SGU extends AbstractIntegrationModel {
                     "email"     => $empresa["responsavel"]["email"] #Verificar
                 ]
             ]
-        ]
+        ];
     }
+
+    public function getType(): int { return CONN_API; }
+
+    public function send(array $bodyRequest): array 
+    {
+        syslog(LOG_NOTICE, __METHOD__);
+        if (PHP_SAPI === 'cli') print_r("Realizando requisição...\n");
+
+        $envData = $this->getConfig()->getEnvData();
+        
+        $curl       = new CurlRequest();
+        $response   = $curl
+            ->setEndpoint($envData["endpoint"])
+            ->setMethod($envData["method"])
+            ->setHeaders([
+                "Content-Type application/json", 
+                "Authorization: Bearer {$envData['token']}"
+            ])
+            ->setBodyRequest(json_encode($bodyRequest))
+            ->send();
+        
+        if (array_key_exists("msg_erro", $response)) {
+            throw new CurlRequestException("ERRO ao incluir proposta no SGU");
+        }
+
+        return $response;
+    }       
 }

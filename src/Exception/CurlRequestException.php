@@ -2,9 +2,9 @@
 
 namespace IntegrationHub\Exception;
 
-class FieldNotExistsException extends \Exception
+class CurlRequestException extends \Exception
 {
-    const ERROR = 100;
+    const ERROR = 150;
     
     public function __construct($message, \Throwable $previous = null) {
         parent::__construct($message, self::ERROR, $previous);

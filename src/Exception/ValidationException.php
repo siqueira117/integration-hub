@@ -2,11 +2,12 @@
 
 namespace IntegrationHub\Exception;
 
-class FieldNotExistsException extends \Exception
+class ValidationException extends \Exception
 {
-    const ERROR = 100;
+    const ERROR = 550;
     
     public function __construct($message, \Throwable $previous = null) {
+        if (is_array($message)) $message = json_encode($message);
         parent::__construct($message, self::ERROR, $previous);
     }
 

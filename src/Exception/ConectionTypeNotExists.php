@@ -2,9 +2,9 @@
 
 namespace IntegrationHub\Exception;
 
-class FieldNotExistsException extends \Exception
+class ConectionTypeNotExists extends \Exception
 {
-    const ERROR = 100;
+    const ERROR = 600;
     
     public function __construct($message, \Throwable $previous = null) {
         parent::__construct($message, self::ERROR, $previous);

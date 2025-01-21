@@ -11,13 +11,12 @@ class Validator
             "required"  => true,
             "max"       => 14
         ],
-        "razao_social" => [
+        "razaosocial" => [
             "type"      => "string",
             "required"  => true
         ],
         "responsavel" => [
-            "type"          => "array",
-            "array_type"    => "associative",
+            "type"          => "array_associative",
             "required"      => true, 
             "itens"         => [
                 "nome"  => [
@@ -32,8 +31,7 @@ class Validator
             ]
         ],
         "endereco1" => [
-            "type"          => "array",
-            "array_type"    => "associative",
+            "type"          => "array_associative",
             "required"      => true, 
             "itens"         => [
                 "cep"   => [
@@ -57,9 +55,10 @@ class Validator
         ]
     ];
 
-    private function getDefaultPayloadRules(): array 
+    // EMPRESA
+    public function getPayloadRules(): array 
     {
-        $rules = $this->getCustomRulesToEmpresa();
+        $rules = $this->getRulesToEmpresa();
         if ($rules) {
             return array_merge(self::PAYLOAD_EMPRESA_REGRAS, $rules);
         }
@@ -67,11 +66,18 @@ class Validator
         return self::PAYLOAD_EMPRESA_REGRAS;
     }
 
-    // EntryPoint
     public function validatePayloadEmpresa(array $dataToValidate): array 
     {
-        return $this->validate_data($dataToValidate, $this->getDefaultPayloadRules());
+        $validations = $this->getPayloadRules();
+        return $this->validate_data($dataToValidate, $validations);
     }
+
+    // Usado em casos de validções customizadas
+    protected function getRulesToEmpresa(): ?array 
+    {
+        return null;
+    }
+    // =====================================================================
 
     protected function validate_data(array $data, array $validations, string $prefix = ""): array
     {
@@ -590,11 +596,5 @@ class Validator
             }
         }
         return false;
-    }
-
-    // Custom Rules
-    private function getCustomRulesToEmpresa(): array 
-    {
-        return [];
     }
 }

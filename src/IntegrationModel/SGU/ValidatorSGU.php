@@ -6,8 +6,8 @@ use IntegrationHub\Rules\Validator;
 
 class ValidatorSGU extends Validator
 {
-    private function getCustomRulesToEmpresa(): array
-    {
+    protected function getRulesToEmpresa(): ?array
+    {        
         return [
             "porte" => [
                 "type"      => "string",

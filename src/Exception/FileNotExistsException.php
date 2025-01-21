@@ -1,6 +1,6 @@
 <?php
 
-namespace Exception;
+namespace IntegrationHub\Exception;
 
 class FileNotExistsException extends \Exception
 {
