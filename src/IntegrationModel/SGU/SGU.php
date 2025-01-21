@@ -2,7 +2,7 @@
 
 namespace IntegrationHub\IntegrationModel\SGU;
 
-use App\Helpers\CurlRequest;
+use IntegrationHub\Request\CurlRequest;
 use IntegrationHub\Exception\CurlRequestException;
 use IntegrationHub\Exception\ValidationException;
 use IntegrationHub\IntegrationModel\AbstractIntegrationModel;

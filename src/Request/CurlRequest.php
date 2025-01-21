@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Helpers;
+namespace IntegrationHub\Request;
 
 use IntegrationHub\Exception\CurlRequestException;
 
@@ -125,6 +125,13 @@ class CurlRequest
         syslog(LOG_NOTICE, ">> Endpoint: " . $this->endpoint);
         syslog(LOG_NOTICE, ">> Tempo de resposta: $httptime");
         syslog(LOG_NOTICE, ">> HTTP Code: $httpcode");
+
+        if (PHP_SAPI === 'cli') {
+            print_r(">> Endpoint: " . $this->endpoint."\n");
+            print_r(">> Tempo de resposta: $httptime\n");
+            print_r(">> HTTP Code: $httpcode\n");
+            print_r(">> Response: $responseOriginal\n");
+        }
 
         // Interpretando retorno da API
         if (!empty($curlerro)) {
