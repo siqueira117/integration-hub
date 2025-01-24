@@ -7,8 +7,9 @@ require_once(__DIR__."/vendor/autoload.php");
 try {
     $config     = json_decode(file_get_contents(__DIR__."/config.json"), true);
     $payload    = json_decode(file_get_contents(__DIR__."/proposta.json"), true);
+    $options    = json_decode(file_get_contents(__DIR__."/options.json"), true);
     
-    $hub = new IntegrationHub($payload, $config, TYPE_SGU);
+    $hub = new IntegrationHub($payload, $config, TYPE_SGU, $options);
     $hub->run();
 } catch (Exception $e) {
     if (PHP_SAPI === 'cli') {

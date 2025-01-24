@@ -128,6 +128,7 @@ class CurlRequest
 
         if (PHP_SAPI === 'cli') {
             print_r(">> Endpoint: " . $this->endpoint."\n");
+            print_r(">> BodyRequest: " . $this->bodyRequest."\n");
             print_r(">> Tempo de resposta: $httptime\n");
             print_r(">> HTTP Code: $httpcode\n");
             print_r(">> Response: $responseOriginal\n");

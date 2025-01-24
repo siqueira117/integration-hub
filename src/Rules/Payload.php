@@ -140,9 +140,9 @@ class Payload
         return $this->payload["contrato"][$produto]["cnpjoperadora"];
     }
 
-    public function getTitular(): array
+    public function getTitular(int $familiaID): array
     {
-        return $this->payload["beneficiarios"][0][0];
+        return $this->payload["beneficiarios"][($familiaID - 1)][0];
     }
 
     public function getPlanoContrato(): array

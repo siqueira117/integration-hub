@@ -20,7 +20,7 @@ class IntegrationHub {
 
     private AbstractIntegrationModel $integrationModel; 
 
-    public function __construct(array $payload, array $jsonConfig, int $integrationType)
+    public function __construct(array $payload, array $jsonConfig, int $integrationType, ?array $options = null)
     {
         // Verifica tipo de integração
         if (!in_array($integrationType, array_keys(self::INTEGRATION_TYPES))) {
@@ -30,7 +30,7 @@ class IntegrationHub {
         // Cria as dependencias necessárias
         $integrationName = self::INTEGRATION_TYPES[$integrationType];
         $validator       = $this->checkAndCreateValidator($integrationName);
-        $parameters      = $this->checkAndCreateParameters($integrationName);
+        $parameters      = $this->checkAndCreateParameters($integrationName, $options);
         $config          = $this->checkAndCreateConfig($integrationName, $jsonConfig);
         $payload         = new Payload($payload);
 
@@ -76,7 +76,7 @@ class IntegrationHub {
      * 
      * @return ParametersModel Classe de parametros instaciada
      */
-    private function checkAndCreateParameters(string $integrationName):  ParametersModel
+    private function checkAndCreateParameters(string $integrationName, array $options):  ParametersModel
     {
         // Verifica se arquivo de configuração de validação existe
         $classPrefix = "Parameters";
@@ -96,7 +96,7 @@ class IntegrationHub {
         }
 
         require_once($file);
-        return new $className();
+        return new $className($options);
     }
 
     private function checkAndCreateConfig(string $integrationName, array $jsonConfig): Config 

@@ -15,5 +15,6 @@
 # Build data
 /build/
 
-.proposta.json
-.config.json
+/proposta.json
+/config.json
+/options.json
