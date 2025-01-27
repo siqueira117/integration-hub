@@ -6,21 +6,30 @@ use IntegrationHub\Exception\FileNotExistsException;
 use IntegrationHub\Exception\ConectionTypeNotExists;
 use IntegrationHub\Exception\IntegrationTypeNotExists;
 use IntegrationHub\IntegrationModel\AbstractIntegrationModel;
-use IntegrationHub\IntegrationModel\Parameters\ParametersModel;
+use IntegrationHub\IntegrationModel\Parameters\Parameters;
 use IntegrationHub\Rules\Config;
 use IntegrationHub\Rules\Payload;
 use IntegrationHub\Rules\Validator;
 
 class IntegrationHub {
+    // CONSTANTS
     private const INTEGRATION_TYPES     = [ 1 => "SGU" ];
     private const NAMESPACE_INTEGRATION = "\\IntegrationHub\IntegrationModel";
     private const NAMESPACE_VALIDATOR   = "\\IntegrationHub\Rules";
     private const NAMESPACE_CONFIG      = "\\IntegrationHub\Rules";
     private const NAMESPACE_PARAMETERS  = "\\IntegrationHub\IntegrationModel\Parameters";
 
+    // CONFIG
+    private Payload $payload;
+    private Validator $validator;
+    private Parameters $parameters;
+    private Config $config;
+    private string $integrationName;
+
+    // MODELO DE INTEGRAÇÃO
     private AbstractIntegrationModel $integrationModel; 
 
-    public function __construct(array $payload, array $jsonConfig, int $integrationType, ?array $options = null)
+    public function __construct(int $integrationType, ?array $payload, ?array $jsonConfig, ?array $options = null)
     {
         // Verifica tipo de integração
         if (!in_array($integrationType, array_keys(self::INTEGRATION_TYPES))) {
@@ -28,14 +37,12 @@ class IntegrationHub {
         }
 
         // Cria as dependencias necessárias
-        $integrationName = self::INTEGRATION_TYPES[$integrationType];
-        $validator       = $this->checkAndCreateValidator($integrationName);
-        $parameters      = $this->checkAndCreateParameters($integrationName, $options);
-        $config          = $this->checkAndCreateConfig($integrationName, $jsonConfig);
-        $payload         = new Payload($payload);
-
-        // Cria a classe de configuração da integração
-        $this->integrationModel = $this->createIntegration($integrationName, $validator, $parameters, $payload, $config);
+        $this->integrationName = self::INTEGRATION_TYPES[$integrationType];
+        
+        $this->validator    = $this->checkAndCreateValidator($this->integrationName);
+        $this->payload      = new Payload($payload);
+        $this->parameters   = $this->checkAndCreateParameters($this->integrationName, $options);
+        $this->config       = $this->checkAndCreateConfig($this->integrationName, $jsonConfig);
     }
 
     /**
@@ -74,9 +81,9 @@ class IntegrationHub {
      * 
      * @param string $integrationName Nome da integração a qual a classe pertence
      * 
-     * @return ParametersModel Classe de parametros instaciada
+     * @return Parameters Classe de parametros instaciada
      */
-    private function checkAndCreateParameters(string $integrationName, array $options):  ParametersModel
+    private function checkAndCreateParameters(string $integrationName, array $options):  Parameters
     {
         // Verifica se arquivo de configuração de validação existe
         $classPrefix = "Parameters";
@@ -124,14 +131,9 @@ class IntegrationHub {
     /**
      * 
      */
-    private function createIntegration(
-        string $integrationName, 
-        Validator $validator, 
-        ParametersModel $parameters,
-        Payload $payload,
-        Config $config
-        ): AbstractIntegrationModel 
+    private function createIntegration(): AbstractIntegrationModel 
     {
+        $integrationName = $this->integrationName;
         $file       = __DIR__."/IntegrationModel/$integrationName/$integrationName.php";
         $className  = self::NAMESPACE_INTEGRATION . "\\$integrationName\\$integrationName"; 
         if (!file_exists($file)) {
@@ -140,11 +142,14 @@ class IntegrationHub {
         }
 
         require_once($file);
-        return new $className($payload, $parameters, $validator, $config);
+        return new $className($this->payload, $this->parameters, $this->validator, $this->config);
     }
 
     public function run() 
     {
+        // Cria a classe de configuração da integração
+        $this->integrationModel = $this->createIntegration();
+        
         $type = $this->integrationModel->getType();
         switch ($type) {
             case CONN_API:

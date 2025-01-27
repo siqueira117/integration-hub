@@ -6,7 +6,7 @@ use IntegrationHub\Exception\OptionIDNotExists;
 use IntegrationHub\Exception\OptionNotExists;
 use IntegrationHub\Exception\RequiredOptionNotInformed;
 
-class ParametersModel {
+class Parameters {
     private $options;
 
     public function __construct(?array $options = null)
@@ -40,7 +40,7 @@ class ParametersModel {
         return $this->options[$optionName];
     }
 
-    public function getOptionFrom(string $optionName, $optionToSearch) 
+    public function getOptionFrom(string $optionName, $optionToSearch, $parameter = null) 
     {
         $optionsList = $this->getOptions($optionName);
         if (!array_key_exists($optionToSearch, $optionsList["options"])) {
@@ -52,6 +52,23 @@ class ParametersModel {
 
             throw new OptionIDNotExists("ID não existe no de-para informado: {{$optionName}}->{{$optionToSearch}}");
         }
+
+        // Caso no de-para exista um array de opções para a mesma categoria
+        // Por exemplo: Filho - 10, Filha 20
+        if (is_array($optionsList["options"][$optionToSearch])) {
+            if (!$parameter) {
+                throw new RequiredOptionNotInformed("DE-PARA obrigatório não foi informado corretamente: $optionName | Parametros faltando");
+            }
+
+            if (!array_key_exists($parameter, $optionsList["options"][$optionToSearch])) {
+                if (PHP_SAPI === 'cli') print_r("Parametro opcional não encontrado no DE-PARA: {{$optionName}}->{{$optionToSearch}}->{{$parameter}}");
+
+                throw new OptionIDNotExists("Parametro opcional não encontrado no DE-PARA: {{$optionName}}->{{$optionToSearch}}->{{$parameter}}");
+            }
+
+            return $optionsList["options"][$optionToSearch][$parameter];
+        }
+        // =================
 
         return $optionsList["options"][$optionToSearch];
     }

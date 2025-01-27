@@ -11,8 +11,11 @@ use IntegrationHub\Rules\Helper;
 class SGU extends AbstractIntegrationModel {
     public function build(): array 
     {
-        syslog(LOG_NOTICE, __METHOD__);
-        
+        syslog(LOG_NOTICE, "[HUB] - " . __METHOD__);
+        if (PHP_SAPI === 'cli') print_r("Construindo bodyRequest...\n");
+
+        syslog(LOG_NOTICE, "[HUB] - Construindo bodyRequest...");
+
         if ($this->payload->getContratacao() === "ad") {}
 
         $request = [
@@ -26,7 +29,7 @@ class SGU extends AbstractIntegrationModel {
 
     private function buildContratoVenda(): array 
     {
-        syslog(LOG_NOTICE, __METHOD__);
+        syslog(LOG_NOTICE, "[HUB] - " . __METHOD__);
 
         $contratoVenda = [];
         if ($this->payload->getContratacao() === "pf" || $this->payload->getContratacao() === "pj") {
@@ -55,7 +58,7 @@ class SGU extends AbstractIntegrationModel {
     // TODO: Adicionar consulta a API de cep
     private function buildBeneficiarios(): array 
     {
-        syslog(LOG_NOTICE, __METHOD__);
+        syslog(LOG_NOTICE, "[HUB] - " . __METHOD__);
 
         $beneficiarios          = $this->payload->getBeneficiarios();
         $beneficiariosRequest   = [];
@@ -79,7 +82,7 @@ class SGU extends AbstractIntegrationModel {
                     "local_atendimento"         => null,
                     "tipo_colaborador"          => null,
                     "matricula"                 => null,
-                    "data_admissao"             => $benID === 0 ? "10/10/2020" : null,
+                    "data_admissao"             => date("d/m/Y", strtotime($ben["data_admissao"] ?? $titular["data_admissao"])),
                     "centro_custo"              => null,
                     "data_solic_inclusao"       => $this->payload->getDataVigencia("d/m/Y"),
                     "data_inic_vigencia"        => $this->payload->getDataVigencia("d/m/Y"),
@@ -108,7 +111,7 @@ class SGU extends AbstractIntegrationModel {
                     "cobra_taxa_insc"           => null,
                     //"tipo_integracao"           => null,
                     "documentos"                => $this->buildDocumentos($ben),
-                    "enderecos"                 => $this->buildDocumentosBeneficiario($titular, $ben),
+                    "enderecos"                 => $this->buildEnderecosBen($titular, $ben),
                     "servicos_adicionais"       => [],
                     "ocupacoes"                 => [],
                     "cpt"                       => []
@@ -157,7 +160,7 @@ class SGU extends AbstractIntegrationModel {
         return $documents;
     }
 
-    private function buildDocumentosBeneficiario(array $titular, array $beneficiary): array
+    private function buildEnderecosBen(array $titular, array $beneficiary): array
     {
         $addresses = [];
         $addressCount = 1;
@@ -178,10 +181,7 @@ class SGU extends AbstractIntegrationModel {
                     "cidade"        => Helper::tiraSimbolos($endereco["cidade"]),
                     "bairro"        => $endereco["bairro"],
                     "uf"            => $endereco["uf"],
-                    "finalidades"   => [
-                        ["tipo" => "C"],
-                        ["tipo" => "F"]
-                    ],
+                    "finalidades"   => [ ["tipo" => "C"], ["tipo" => "F"] ],
                     "contatos"      => [
                         [
                             "valor"         => $beneficiary["email"] ? $beneficiary["email"] : "",
@@ -288,8 +288,6 @@ class SGU extends AbstractIntegrationModel {
         ];
     }
 
-    public function getType(): int { return CONN_API; }
-
     public function send(array $bodyRequest): array 
     {
         syslog(LOG_NOTICE, __METHOD__);
@@ -313,5 +311,7 @@ class SGU extends AbstractIntegrationModel {
         }
 
         return $response;
-    }       
+    }
+
+    public function getType(): int { return CONN_API; }
 }

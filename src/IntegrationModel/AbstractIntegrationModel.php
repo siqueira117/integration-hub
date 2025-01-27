@@ -2,16 +2,16 @@
 
 namespace IntegrationHub\IntegrationModel;
 
-use IntegrationHub\IntegrationModel\Parameters\ParametersModel;
+use IntegrationHub\IntegrationModel\Parameters\Parameters;
 use IntegrationHub\Rules\{Config, Validator, Payload};
 
 abstract class AbstractIntegrationModel {
     protected Payload           $payload;
-    protected ParametersModel   $parameters;
+    protected Parameters   $parameters;
     protected Validator         $validator;
     protected Config            $config;
 
-    public function __construct(Payload $payload, ParametersModel $parameters, Validator $validator, Config $config)
+    public function __construct(Payload $payload, Parameters $parameters, Validator $validator, Config $config)
     {
         $this->payload      = $payload;
         $this->parameters   = $parameters;
