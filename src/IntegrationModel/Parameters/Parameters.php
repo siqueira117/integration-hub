@@ -20,13 +20,15 @@ class Parameters {
     private function validateOptions(array $options): void 
     {
         $requiredOptions = $this->getRequiredOptions();
-        foreach ($requiredOptions as $optionIndex => $optionName) {
-            if (!array_key_exists($optionName, $options)) {
-                throw new RequiredOptionNotInformed("DE-PARA obrigatório não foi informado: $optionName");
-            }
-
-            if (!array_key_exists("options", $options[$optionName])) {
-                throw new RequiredOptionNotInformed("DE-PARA obrigatório não foi informado corretamente: $optionName | Lista de opções faltando");
+        if ($requiredOptions) {
+            foreach ($requiredOptions as $optionIndex => $optionName) {
+                if (!array_key_exists($optionName, $options)) {
+                    throw new RequiredOptionNotInformed("DE-PARA obrigatório não foi informado: $optionName");
+                }
+    
+                if (!array_key_exists("options", $options[$optionName])) {
+                    throw new RequiredOptionNotInformed("DE-PARA obrigatório não foi informado corretamente: $optionName | Lista de opções faltando");
+                }
             }
         }
     }

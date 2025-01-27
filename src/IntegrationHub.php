@@ -13,7 +13,7 @@ use IntegrationHub\Rules\Validator;
 
 class IntegrationHub {
     // CONSTANTS
-    private const INTEGRATION_TYPES     = [ 1 => "SGU" ];
+    private const INTEGRATION_TYPES     = [ 1 => "SGU", 2 => "MEDEX" ];
     private const NAMESPACE_INTEGRATION = "\\IntegrationHub\IntegrationModel";
     private const NAMESPACE_VALIDATOR   = "\\IntegrationHub\Rules";
     private const NAMESPACE_CONFIG      = "\\IntegrationHub\Rules";
