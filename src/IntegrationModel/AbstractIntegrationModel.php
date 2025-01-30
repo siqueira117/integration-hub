@@ -2,7 +2,7 @@
 
 namespace IntegrationHub\IntegrationModel;
 
-use IntegrationHub\IntegrationModel\Parameters\Parameters;
+use IntegrationHub\Rules\Parameters;
 use IntegrationHub\Rules\{Config, Validator, Payload};
 
 abstract class AbstractIntegrationModel {

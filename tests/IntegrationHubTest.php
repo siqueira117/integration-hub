@@ -2,17 +2,18 @@
 
 namespace Tests;
 
-use IntegrationHub\Exception\IntegrationTypeNotExists;
+use IntegrationHub\Exception\IntegrationHub\IntegrationTypeNotExists;
 use IntegrationHub\IntegrationHub;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class IntegrationHubTest extends TestCase {
     private $payload;
+    private $config;
 
     protected function setUp(): void
     {
-        $this->payload = [];
+        $this->payload  = [];
+        $this->config   = [];
     }
 
     public function test_erro_ao_nao_encontrar_tipo_de_integracao(): void
@@ -20,7 +21,8 @@ class IntegrationHubTest extends TestCase {
         $this->expectException(IntegrationTypeNotExists::class);
         $this->expectExceptionCode(200);
         
-        new IntegrationHub($this->payload, 1);
+        $tipoIntegracaoNaoExiste = 100;
+        new IntegrationHub($tipoIntegracaoNaoExiste, $this->payload, $this->config);
     }
 
 }

@@ -2,7 +2,6 @@
 
 namespace IntegrationHub\IntegrationModel\MEDEX;
 
-use IntegrationHub\Exception\CurlRequestException;
 use IntegrationHub\IntegrationModel\AbstractIntegrationModel;
 use IntegrationHub\Request\CurlRequest;
 
@@ -10,7 +9,7 @@ class MEDEX extends AbstractIntegrationModel {
     public function build(): array
     {
         syslog(LOG_NOTICE, "[HUB] - " . __METHOD__);
-        if (PHP_SAPI === 'cli') print_r("Construindo bodyRequest...\n");
+        if (PHP_SAPI === 'cli') print_r("[HUB] - Construindo bodyRequest...\n");
 
         $body = [
             "numero_proposta"   => $this->payload->getPropostaID(),

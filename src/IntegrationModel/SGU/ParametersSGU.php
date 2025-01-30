@@ -2,7 +2,7 @@
 
 namespace IntegrationHub\IntegrationModel\SGU;
 
-use IntegrationHub\IntegrationModel\Parameters\Parameters;
+use IntegrationHub\Rules\Parameters;
 
 class ParametersSGU extends Parameters {
     public function getTipoSocietario(string $porte): string 

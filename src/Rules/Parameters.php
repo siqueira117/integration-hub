@@ -1,6 +1,6 @@
 <?php
 
-namespace IntegrationHub\IntegrationModel\Parameters;
+namespace IntegrationHub\Rules;
 
 use IntegrationHub\Exception\OptionIDNotExists;
 use IntegrationHub\Exception\OptionNotExists;

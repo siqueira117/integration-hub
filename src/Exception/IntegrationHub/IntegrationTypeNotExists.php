@@ -1,6 +1,6 @@
 <?php
 
-namespace IntegrationHub\Exception;
+namespace IntegrationHub\Exception\IntegrationHub;
 
 class IntegrationTypeNotExists extends \Exception
 {

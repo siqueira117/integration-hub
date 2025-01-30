@@ -2,7 +2,7 @@
 
 namespace IntegrationHub\IntegrationModel\MEDEX;
 
-use IntegrationHub\IntegrationModel\Parameters\Parameters;
+use IntegrationHub\Rules\Parameters;
 
 class ParametersMEDEX extends Parameters {
     public function getRequiredOptions(): array
