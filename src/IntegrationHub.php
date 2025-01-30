@@ -27,20 +27,14 @@ class IntegrationHub {
     // MODELO DE INTEGRAÇÃO
     private AbstractIntegrationModel $integrationModel; 
 
-    public function __construct(int $integrationType, ?array $payload, ?array $jsonConfig, ?array $parameters = null)
+    public function __construct(?int $integrationType = null, ?array $payload = null, ?array $jsonConfig = null, ?array $parameters = null)
     {
-        // Verifica tipo de integração
-        if (!in_array($integrationType, array_keys(self::INTEGRATION_TYPES))) {
-            throw new IntegrationTypeNotExists("Tipo de integração $integrationType não é válido");
-        }
+        if ($integrationType)   $this->setIntegrationName($integrationType);
+        if ($payload)           $this->setPayload($payload);
+        if ($parameters)        $this->setParameters($parameters);
+        if ($jsonConfig)        $this->setConfig($jsonConfig);
 
-        // Cria as dependencias necessárias
-        $this->integrationName = self::INTEGRATION_TYPES[$integrationType];
-        
-        $this->validator    = $this->checkAndCreateObject("Validator");
-        $this->payload      = new Payload($payload);
-        $this->parameters   = $this->checkAndCreateObject("Parameters", $parameters);
-        $this->config       = $this->checkAndCreateObject("Config", $jsonConfig);
+        $this->validator = $this->checkAndCreateObject("Validator");    
     }
 
     private function checkAndCreateObject(string $classPrefix, $parametersToObject = null) 
@@ -112,4 +106,32 @@ class IntegrationHub {
         $json = $this->integrationModel->build();
         $this->integrationModel->send($json);
     }
+
+    // SETTERS
+    public function setIntegrationName(int $integrationType): void
+    {
+        // Verifica tipo de integração
+        if ($integrationType && !in_array($integrationType, array_keys(self::INTEGRATION_TYPES))) {
+            throw new IntegrationTypeNotExists("Tipo de integração $integrationType não é válido");
+        }
+
+        // Cria as dependencias necessárias
+        $this->integrationName = self::INTEGRATION_TYPES[$integrationType];
+    }
+
+    public function setPayload(array $payload): void
+    {
+        $this->payload = new Payload($payload);
+    }
+
+    public function setParameters(array $parameters): void
+    {
+        $this->parameters = $this->checkAndCreateObject("Parameters", $parameters);
+    }
+
+    public function setConfig(array $jsonConfig): void
+    {
+        $this->config = $this->checkAndCreateObject("Config", $jsonConfig);
+    }
+    // ===============
 }
