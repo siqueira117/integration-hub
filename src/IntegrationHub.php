@@ -5,6 +5,7 @@ namespace IntegrationHub;
 use IntegrationHub\Exception\FileNotExistsException;
 use IntegrationHub\Exception\ConectionTypeNotExists;
 use IntegrationHub\Exception\IntegrationHub\IntegrationTypeNotExists;
+use IntegrationHub\Exception\IntegrationHub\InvalidClassException;
 use IntegrationHub\IntegrationModel\AbstractIntegrationModel;
 use IntegrationHub\Rules\Parameters;
 use IntegrationHub\Rules\Config;
@@ -29,7 +30,7 @@ class IntegrationHub {
 
     public function __construct(?int $integrationType = null, ?array $payload = null, ?array $jsonConfig = null, ?array $parameters = null)
     {
-        if ($integrationType)   $this->setIntegrationName($integrationType);
+        if ($integrationType)   $this->setIntegrationType($integrationType);
         if ($payload)           $this->setPayload($payload);
         if ($parameters)        $this->setParameters($parameters);
         if ($jsonConfig)        $this->setConfig($jsonConfig);
@@ -81,8 +82,28 @@ class IntegrationHub {
             throw new FileNotExistsException("Arquivo de configuração '$integrationName' não foi configurado");
         }
 
+        $this->validateClasses();
         require_once($file);
         return new $className($this->payload, $this->parameters, $this->validator, $this->config);
+    }
+
+    private function validateClasses(): void
+    {
+        $classes = [
+            "Payload"   => $this->payload,
+            "Parameter" => $this->parameters,
+            "Validator" => $this->validator,
+            "Config"    => $this->config
+        ];
+
+        $classes = array_filter($classes, function ($v) {
+            return (!$v);
+        });
+
+        if (in_array(null, $classes)) {
+            $keys = array_keys($classes);
+            throw new InvalidClassException("Classes não foram informadas: " . json_encode($keys));
+        }
     }
 
     public function run() 
@@ -108,7 +129,7 @@ class IntegrationHub {
     }
 
     // SETTERS
-    public function setIntegrationName(int $integrationType): void
+    public function setIntegrationType(int $integrationType): self
     {
         // Verifica tipo de integração
         if ($integrationType && !in_array($integrationType, array_keys(self::INTEGRATION_TYPES))) {
@@ -117,21 +138,25 @@ class IntegrationHub {
 
         // Cria as dependencias necessárias
         $this->integrationName = self::INTEGRATION_TYPES[$integrationType];
+        return $this;
     }
 
-    public function setPayload(array $payload): void
+    public function setPayload(array $payload): self
     {
         $this->payload = new Payload($payload);
+        return $this;
     }
 
-    public function setParameters(array $parameters): void
+    public function setParameters(array $parameters): self
     {
         $this->parameters = $this->checkAndCreateObject("Parameters", $parameters);
+        return $this;
     }
 
-    public function setConfig(array $jsonConfig): void
+    public function setConfig(array $jsonConfig): self
     {
         $this->config = $this->checkAndCreateObject("Config", $jsonConfig);
+        return $this;
     }
     // ===============
 }
