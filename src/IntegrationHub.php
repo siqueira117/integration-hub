@@ -64,7 +64,16 @@ class IntegrationHub {
             throw new InvalidClassException("Payload deve ser informado");
         }
 
-        return array_merge($this->originalPayload, $fields);
+        $newPayload     = array_merge($this->originalPayload, $fields);
+        $this->payload  = new Payload($newPayload);
+        return $newPayload;
+    }
+
+    public function getBodyRequest(): array
+    {
+        if (!isset($this->integrationModel)) $this->integrationModel = $this->createIntegration();
+
+        return $this->integrationModel->build();
     }
 
     private function checkAndCreateObject(string $classPrefix, $parametersToObject = null) 

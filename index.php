@@ -29,7 +29,10 @@ function integraSGU()
     
         $hub = new IntegrationHub(TYPE_SGU);
         $hub->setPayload($payload);
+        $hub->setParameters($options);
+        $hub->setConfig($config);
         $hub->replaceAndAddFieldsOnPayload(["propostaID" => 200]);
+        $hub->getBodyRequest();
 
     } catch (Exception $e) {
         if (PHP_SAPI === 'cli') {
