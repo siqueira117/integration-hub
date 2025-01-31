@@ -27,8 +27,7 @@ function integraSGU()
         $payload        = json_decode(file_get_contents(__DIR__."/proposta.json"), true);
         $options        = json_decode(file_get_contents(__DIR__."/options.json"), true);
     
-        $hub = new IntegrationHub();
-        $hub->setIntegrationType(TYPE_SGU);
+        $hub = new IntegrationHub(TYPE_SGU);
         $hub->setPayload($payload);
         $hub->setConfig($config);
         $hub->setParameters($options);
@@ -41,4 +40,4 @@ function integraSGU()
     }
 }
 
-integraMedex();
+integraSGU();

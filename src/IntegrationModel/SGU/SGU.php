@@ -56,12 +56,23 @@ class SGU extends AbstractIntegrationModel {
     }
 
     // TODO: Adicionar consulta a API de cep
+    // TODO: Adicionar sca
+    // TODO: Adicionar CPT
     private function buildBeneficiarios(): array 
     {
         syslog(LOG_NOTICE, "[HUB] - " . __METHOD__);
 
         $beneficiarios          = $this->payload->getBeneficiarios();
         $beneficiariosRequest   = [];
+        
+        $titularEResponsavel = false;
+        if ($this->payload->getContratacao() == "pf") {
+            $respFin = $this->payload->getRespFin();
+            if ($respFin["cpf"] == $this->payload->getTitular(1)["cpf"]) {
+                $titularEResponsavel = true;
+            }
+        }
+
         foreach ($beneficiarios as $familiaID => $familia) {
             $titular = $familia[0];
             foreach ($familia as $benID => $ben) {
@@ -117,11 +128,109 @@ class SGU extends AbstractIntegrationModel {
                     "cpt"                       => []
                 ];
 
+                if ($this->payload->getContratacao() == "pf" && !$titularEResponsavel) { 
+                    $benTemp["responsavel_financeiro"] = $this->buildResponsavelFinanceiro();
+                }
+
+                if (!$titularEResponsavel && $benID === 0) {
+                    $beneficiario["pessoa_responsavel"] = $this->buildPessoaResponsavel($ben);
+                }
+
                 $beneficiariosRequest[] = $benTemp;
             }
         }
 
         return $beneficiariosRequest;
+    }
+
+    protected function buildResponsavelFinanceiro(): array
+    {
+        $respFin = $this->payload->getRespFin();
+
+        $numeroEndereco = substr(preg_replace('/[^0-9]/', '', $respFin["endereco1"]["numero"]), 0, 5); //maximo 5 numeros
+        if (empty($numeroEndereco)) {
+            $numeroEndereco = 'S/N';
+        }
+
+        $body = array(
+            "pais"      => "32",
+            "nome"      => $respFin["nome"],
+            "nome_mae"  => $respFin["nome_mae"] ?? null,
+            "data_nasc" => date("d/m/Y", strtotime($respFin["data_nascimento"])),
+            "sexo"      => $respFin["sexo"],
+            "cpf"       => strval((int)$respFin["cpf"]),
+            "finalidades"   => [
+                ["tipo" => "C"],
+                ["tipo" => "F"]
+            ],
+            "endereco"  => array(
+                "cep"               => $respFin["endereco1"]["cep"],
+                "logradouro"        => $respFin["endereco1"]["logradouro"],
+                "numero"            => $numeroEndereco,
+                "cidade"            => $respFin["endereco1"]["cidade"],
+                "uf"                => $respFin["endereco1"]["uf"],
+                "bairro"            => $respFin["endereco1"]["bairro"],
+                "complemento"       => array_key_exists("complemento", $respFin["endereco1"]) ? Helper::tiraSimbolos(substr($respFin["endereco1"]["complemento"], 0, 24)) : "",
+                "tipo_endereco"     => "1",
+                "ponto_referencia"  => "??",
+                "caixa_postal"      => "??",
+            )
+        );
+
+        if (array_key_exists("estado_civil", $respFin)) {
+            $body["estado_civil"] = $this->parameters->getOptionFrom("estadoCivil", $respFin["estado_civil"]);
+        }
+
+        if (array_key_exists("parentesco", $respFin)) {
+            $body["grau_parentesco"] = $this->parameters->getOptionFrom("parentesco", $respFin["parentesco"]);
+        }
+
+        return $body;
+    }
+
+    protected function buildPessoaResponsavel(array $ben): array
+    {
+        $dataNasc = $ben["data_nascimento"];
+        $dataNasc = new \DateTime($dataNasc);
+        $idade = $dataNasc->diff(new \DateTime(date("Y-m-d")));
+        $idade = (int)$idade->format("%Y");
+        if ($idade >= 18) {
+            $pessoaResp = $this->payload->getRespFin();
+        } else {
+            $pessoaResp = $this->payload->getRepresentanteLegal();
+        }
+
+        $numeroEndereco = substr(preg_replace('/[^0-9]/', '', $pessoaResp["endereco1"]["numero"]), 0, 5); //maximo 5 numeros
+        if (empty($numeroEndereco)) {
+            $numeroEndereco = 'S/N';
+        }
+
+        $body = array(
+            "pais"      => "32",
+            "nome"      => $pessoaResp["nome"],
+            "nome_mae"  => $pessoaResp["nome_mae"] ?? null,
+            "data_nasc" => date("d/m/Y", strtotime($pessoaResp["data_nascimento"] ?? $pessoaResp["nascimento"])),
+            "sexo"      => $pessoaResp["sexo"],
+            "cpf"       => strval((int)$pessoaResp["cpf"]),
+            "endereco"  => array(
+                "cep"               => $pessoaResp["endereco1"]["cep"],
+                "logradouro"        => $pessoaResp["endereco1"]["logradouro"],
+                "numero"            => $numeroEndereco,
+                "cidade"            => $pessoaResp["endereco1"]["cidade"],
+                "uf"                => $pessoaResp["endereco1"]["uf"],
+                "bairro"            => $pessoaResp["endereco1"]["bairro"],
+                "complemento"       => array_key_exists("complemento", $pessoaResp["endereco1"]) ? Helper::tiraSimbolos(substr($pessoaResp["endereco1"]["complemento"], 0, 24)) : "",
+                "tipo_endereco"     => "1",
+                "ponto_referencia"  => "??",
+                "caixa_postal"      => "??"
+            )
+        );
+
+        if (array_key_exists("estado_civil", $pessoaResp)) {
+            $body["estado_civil"] = $this->parameters->getOptionFrom("estadoCivil", $pessoaResp["estado_civil"]);        
+        }
+
+        return $body;
     }
 
     // TODO: Implementar envio de anexos
@@ -165,7 +274,7 @@ class SGU extends AbstractIntegrationModel {
         $addresses = [];
         $addressCount = 1;
         while ($addressCount <= 2) {
-            $endereco = $dependente["endereco" . $addressCount] ?? $beneficiary["endereco" . $addressCount];
+            $endereco = $beneficiary["endereco" . $addressCount] ?? $titular["endereco" . $addressCount];
             if ($endereco) {
 
                 $numeroEndereco = substr(preg_replace('/[^0-9]/', '', $endereco["numero"]), 0, 5); //maximo 5 numeros
@@ -184,7 +293,7 @@ class SGU extends AbstractIntegrationModel {
                     "finalidades"   => [ ["tipo" => "C"], ["tipo" => "F"] ],
                     "contatos"      => [
                         [
-                            "valor"         => $beneficiary["email"] ? $beneficiary["email"] : "",
+                            "valor"         => $beneficiary["email"] ? $titular["email"] : "",
                             "tipo_contato"  => "E",
                             "assunto"       => "11"
                         ]
@@ -233,7 +342,7 @@ class SGU extends AbstractIntegrationModel {
         syslog(LOG_NOTICE, __METHOD__);
         $empresa = $this->payload->getEmpresa(); 
     
-        $validations = $this->validator->validatePayloadEmpresa($empresa);
+        $validations = $this->validator->validatePayload($empresa, $this->validator::V_EMPRESA);
         if ($validations) {
             throw new ValidationException("[PAYLOAD] Erro na validação de empresa: " . json_encode($validations));
         }
@@ -248,13 +357,13 @@ class SGU extends AbstractIntegrationModel {
             "inscricao_estadual"        => $empresa["inscricaoestadual"],
             "inscricao_municipal"       => $empresa["inscricaomunicipal"],
             "cnae"                      => $this->buildCNAE($empresa["cnae"]),
-            "enderecos"                 => $this->buildEnderecos($empresa)
+            "enderecos"                 => $this->buildEnderecoEmpresa($empresa)
         ];
         
         return $empTemp;
     }
 
-    private function buildCNAE(string $cnae): array 
+    protected function buildCNAE(string $cnae): array 
     {
         return [
             [
@@ -265,27 +374,48 @@ class SGU extends AbstractIntegrationModel {
         ];
     }
 
-    private function buildEnderecos(array $empresa): array 
+    protected function buildEnderecoEmpresa(array $company): array
     {
-        return [
-            [
-                "cep"               => $empresa["endereco1"]["cep"],
-                "logradouro"        => $empresa["endereco1"]["logradouro"],
-                "numero"            => $empresa["endereco1"]["numero"],
-                "complemento"       => (string)$empresa["endereco1"]["complemento"] ?? "",
-                "bairro"            => $empresa["endereco1"]["bairro"],
-                "cidade"            => $empresa["endereco1"]["cidade"],
-                "uf"                => $empresa["endereco1"]["uf"],
-                "ponto_referencia"  => null,
-                "caixa_postal"      => null,
-                "contatos"          => [
-                    "nome"      => substr($empresa["responsavel"]["nome"], 0, 25), #Verificar
-                    "telefone"  => $empresa["responsavel"]["tel_fixo"] ?? "", #Verificar
-                    "celular"   => $empresa["responsavel"]["tel_celular"] ?? "", #Verificar
-                    "email"     => $empresa["responsavel"]["email"] #Verificar
-                ]
-            ]
-        ];
+        $addresses = array();
+
+        $addressCount = 1;
+        while ($addressCount <= 2) {
+            if ($addressCount == 1 || !$company["endereco2_igual_endereco1"]) {
+                if (!empty($company["endereco" . $addressCount])) {
+                    if (strlen($company["responsavel"]["nome"]) > 24) {
+                        $nomeResponsavel = substr($company["responsavel"]["nome"], 0, 24);
+                    } else {
+                        $nomeResponsavel = $company["responsavel"]["nome"];
+                    }
+
+                    $numeroEndereco = substr(preg_replace('/[^0-9]/', '', $company["endereco" . $addressCount]["numero"]), 0, 5); //maximo 5 numeros
+                    if (empty($numeroEndereco)) {
+                        $numeroEndereco = 'S/N';
+                    }
+
+                    array_push($addresses, [
+                        "cep"               => $company["endereco" . $addressCount]["cep"],
+                        "logradouro"        => $company["endereco" . $addressCount]["logradouro"],
+                        "numero"            => $numeroEndereco,
+                        "complemento"       => array_key_exists("complemento", $company["endereco" . $addressCount]) ? Helper::tiraSimbolos(substr($company["endereco" . $addressCount]["complemento"], 0, 30)) : "",
+                        "bairro"            => $company["endereco" . $addressCount]["bairro"],
+                        "cidade"            => Helper::tiraSimbolos($company["endereco" . $addressCount]["cidade"]),
+                        "uf"                => $company["endereco" . $addressCount]["uf"],
+                        "ponto_referencia"  => null,
+                        "caixa_postal"      => null,
+                        "contatos"          => [
+                            "nome"      => $nomeResponsavel,
+                            "telefone"  => array_key_exists("tel_fixo", $company["responsavel"]) ? $company["responsavel"]["tel_fixo"] : "",
+                            "celular"   => $company["responsavel"]["tel_celular"] ?? "",
+                            "email"     => $company["responsavel"]["email"]
+                        ]
+                    ]);
+                }
+            }
+            $addressCount += 1;
+        }
+
+        return $addresses;
     }
 
     public function send(array $bodyRequest): array 
@@ -293,7 +423,7 @@ class SGU extends AbstractIntegrationModel {
         syslog(LOG_NOTICE, __METHOD__);
         if (PHP_SAPI === 'cli') print_r("Realizando requisição...\n");
 
-        $envData = $this->getConfig()->getEnvData();
+        $envData = $this->getConfig()->getEnvData()["sendProposal"];
         
         $curl       = new CurlRequest();
         $response   = $curl
