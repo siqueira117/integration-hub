@@ -21,6 +21,7 @@ class IntegrationHub {
     // CONFIG
     private Payload $payload;
     private array $originalPayload;
+    private array $newPayload;
     private Validator $validator;
     private Parameters $parameters;
     private Config $config;
@@ -64,9 +65,9 @@ class IntegrationHub {
             throw new InvalidClassException("Payload deve ser informado");
         }
 
-        $newPayload     = array_merge($this->originalPayload, $fields);
-        $this->payload  = new Payload($newPayload);
-        return $newPayload;
+        $this->newPayload = array_merge($this->originalPayload, $fields);
+        $this->payload  = new Payload($this->newPayload);
+        return $this->newPayload;
     }
 
     public function getBodyRequest(): array
@@ -182,4 +183,17 @@ class IntegrationHub {
         return $this;
     }
     // ===============
+
+    // GETTERS
+    public function getOriginalPayload(): array
+    {
+        return $this->originalPayload;
+    }
+
+    public function getNewPayload(): array
+    {
+        if (!isset($this->newPayload)) throw new InvalidClassException("Payload não foi modificado");
+         
+        return $this->newPayload;
+    }
 }
