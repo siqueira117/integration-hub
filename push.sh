@@ -8,10 +8,10 @@ while [ "$commit_type" == "" ]; do
     read commit_type
 done
 
-if [[ ! " ${commit_types[*]} " =~ [[:space:]]${commit_type}[[:space:]] ]]; then
+while [[ ! " ${commit_types[*]} " =~ [[:space:]]${commit_type}[[:space:]] ]]; do
     echo "Digite um tipo válido de commit:"
     read commit_type
-fi
+done
 
 echo "Digite a mensagem do commit:"
 read commit_message

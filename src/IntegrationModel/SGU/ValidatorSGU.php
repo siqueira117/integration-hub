@@ -6,9 +6,10 @@ use IntegrationHub\Rules\Validator;
 
 class ValidatorSGU extends Validator
 {
-    protected function getRulesToEmpresa(): ?array
-    {        
-        return [
+    protected function getEmpresaRules(): array
+    {
+        $validations = parent::getEmpresaRules();
+        $customValidation = [
             "porte" => [
                 "type"      => "string",
                 "required"  => true
@@ -24,5 +25,7 @@ class ValidatorSGU extends Validator
                 "max"       => 45
             ]
         ];
+
+        return array_merge($validations, $customValidation); 
     }
 }

@@ -26,7 +26,7 @@ class Parameters {
                     throw new RequiredOptionNotInformed("DE-PARA obrigatório não foi informado: $optionName");
                 }
     
-                if (!array_key_exists("options", $options[$optionName])) {
+                if (!array_key_exists("de-para", $options[$optionName])) {
                     throw new RequiredOptionNotInformed("DE-PARA obrigatório não foi informado corretamente: $optionName | Lista de opções faltando");
                 }
             }
@@ -45,7 +45,7 @@ class Parameters {
     public function getOptionFrom(string $optionName, $optionToSearch, $parameter = null) 
     {
         $optionsList = $this->getOptions($optionName);
-        if (!array_key_exists($optionToSearch, $optionsList["options"])) {
+        if (!array_key_exists($optionToSearch, $optionsList["de-para"])) {
             if (PHP_SAPI === 'cli') print_r("ID não existe no de-para informado: {{$optionName}}->{{$optionToSearch}}");
             
             if (array_key_exists("default", $optionsList)) {
@@ -57,22 +57,22 @@ class Parameters {
 
         // Caso no de-para exista um array de opções para a mesma categoria
         // Por exemplo: Filho - 10, Filha 20
-        if (is_array($optionsList["options"][$optionToSearch])) {
+        if (is_array($optionsList["de-para"][$optionToSearch])) {
             if (!$parameter) {
                 throw new RequiredOptionNotInformed("DE-PARA obrigatório não foi informado corretamente: $optionName | Parametros faltando");
             }
 
-            if (!array_key_exists($parameter, $optionsList["options"][$optionToSearch])) {
+            if (!array_key_exists($parameter, $optionsList["de-para"][$optionToSearch])) {
                 if (PHP_SAPI === 'cli') print_r("Parametro opcional não encontrado no DE-PARA: {{$optionName}}->{{$optionToSearch}}->{{$parameter}}");
 
                 throw new OptionIDNotExists("Parametro opcional não encontrado no DE-PARA: {{$optionName}}->{{$optionToSearch}}->{{$parameter}}");
             }
 
-            return $optionsList["options"][$optionToSearch][$parameter];
+            return $optionsList["de-para"][$optionToSearch][$parameter];
         }
         // =================
 
-        return $optionsList["options"][$optionToSearch];
+        return $optionsList["de-para"][$optionToSearch];
     }
 
     public function setOptions(array $options): void 

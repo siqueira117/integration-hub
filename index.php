@@ -11,7 +11,7 @@ function integraMedex() {
         $options        = json_decode(file_get_contents(__DIR__."/options.json"), true);
         $configMedex    = json_decode(file_get_contents(__DIR__."/config_medex.json"), true);
     
-        $hub = new IntegrationHub(TYPE_MEDEX, $payload, $configMedex, $options);
+        $hub = new IntegrationHub(TYPE_MEDEX);
         $hub->run();
     } catch (Exception $e) {
         if (PHP_SAPI === 'cli') {

@@ -28,7 +28,7 @@ class IntegrationHub {
     // MODELO DE INTEGRAÇÃO
     private AbstractIntegrationModel $integrationModel; 
 
-    public function __construct(?int $integrationType = null, ?array $payload = null, ?array $jsonConfig = null, ?array $parameters = null)
+    public function __construct(int $integrationType, ?array $payload = null, ?array $jsonConfig = null, ?array $parameters = null)
     {
         if ($integrationType)   $this->setIntegrationType($integrationType);
         if ($payload)           $this->setPayload($payload);
@@ -90,10 +90,10 @@ class IntegrationHub {
     private function validateClasses(): void
     {
         $classes = [
-            "Payload"   => $this->payload,
-            "Parameter" => $this->parameters,
-            "Validator" => $this->validator,
-            "Config"    => $this->config
+            "Payload"   => isset($this->payload),
+            "Parameter" => isset($this->parameters),
+            "Validator" => isset($this->validator),
+            "Config"    => isset($this->config)
         ];
 
         $classes = array_filter($classes, function ($v) {
@@ -102,7 +102,7 @@ class IntegrationHub {
 
         if (in_array(null, $classes)) {
             $keys = array_keys($classes);
-            throw new InvalidClassException("Classes não foram informadas: " . json_encode($keys));
+            throw new InvalidClassException("Parametros não foram informadas: " . json_encode($keys));
         }
     }
 
