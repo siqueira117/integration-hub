@@ -20,6 +20,7 @@ class IntegrationHub {
 
     // CONFIG
     private Payload $payload;
+    private array $originalPayload;
     private Validator $validator;
     private Parameters $parameters;
     private Config $config;
@@ -36,6 +37,34 @@ class IntegrationHub {
         if ($jsonConfig)        $this->setConfig($jsonConfig);
 
         $this->validator = $this->checkAndCreateObject("Validator");    
+    }
+
+    /**
+     * 
+     */
+    public function run() 
+    {
+        // Cria a classe de configuração da integração
+        $this->integrationModel = $this->createIntegration();
+        
+        $type = $this->integrationModel->getType();
+        switch ($type) {
+            case CONN_API:
+                return $this->runApi();
+                break;
+            default:
+                throw new ConectionTypeNotExists("{$type} não é um tipo de conexão válido");
+                break;
+        }
+    }
+
+    public function replaceAndAddFieldsOnPayload(array $fields): array
+    {
+        if (!isset($this->originalPayload)) {
+            throw new InvalidClassException("Payload deve ser informado");
+        }
+
+        return array_merge($this->originalPayload, $fields);
     }
 
     private function checkAndCreateObject(string $classPrefix, $parametersToObject = null) 
@@ -106,22 +135,6 @@ class IntegrationHub {
         }
     }
 
-    public function run() 
-    {
-        // Cria a classe de configuração da integração
-        $this->integrationModel = $this->createIntegration();
-        
-        $type = $this->integrationModel->getType();
-        switch ($type) {
-            case CONN_API:
-                return $this->runApi();
-                break;
-            default:
-                throw new ConectionTypeNotExists("{$type} não é um tipo de conexão válido");
-                break;
-        }
-    }
-
     private function runApi() 
     {
         $json = $this->integrationModel->build();
@@ -143,6 +156,7 @@ class IntegrationHub {
 
     public function setPayload(array $payload): self
     {
+        $this->originalPayload = $payload;
         $this->payload = new Payload($payload);
         return $this;
     }
