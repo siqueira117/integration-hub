@@ -28,14 +28,14 @@ abstract class Config {
             $requiredFields = array_keys($this->validatorConfig);
             foreach ($requiredFields as $field) {
                 if (!array_key_exists($field, $config[$env])) {
-                    if (PHP_SAPI === 'cli') print_r("Campo {$env}->{$field} é obrigatório e deve ser informado\n");
+                    if (PHP_SAPI === 'cli') print_r("[HUB] - Campo {$env}->{$field} é obrigatório e deve ser informado\n");
                     
                     throw new ConfigException("Campo {$env}->{$field} é obrigatório e deve ser informado");
                 }
 
                 foreach ($this->validatorConfig[$field] as $option) {
                     if (!array_key_exists($option, $config[$env][$field])) {
-                        if (PHP_SAPI === 'cli') print_r("Campo {$env}->{$field}->{$option} é obrigatório e deve ser informado\n");
+                        if (PHP_SAPI === 'cli') print_r("[HUB] - Campo {$env}->{$field}->{$option} é obrigatório e deve ser informado\n");
 
                         throw new ConfigException("Campo {$env}->{$field}->{$option} é obrigatório e deve ser informado");
                     }

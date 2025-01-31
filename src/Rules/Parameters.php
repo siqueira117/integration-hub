@@ -46,7 +46,7 @@ class Parameters {
     {
         $optionsList = $this->getOptions($optionName);
         if (!array_key_exists($optionToSearch, $optionsList["de-para"])) {
-            if (PHP_SAPI === 'cli') print_r("ID não existe no de-para informado: {{$optionName}}->{{$optionToSearch}}");
+            if (PHP_SAPI === 'cli') print_r("[HUB] - ID não existe no de-para informado: {{$optionName}}->{{$optionToSearch}}");
             
             if (array_key_exists("default", $optionsList)) {
                 return $optionsList["default"];
@@ -63,7 +63,7 @@ class Parameters {
             }
 
             if (!array_key_exists($parameter, $optionsList["de-para"][$optionToSearch])) {
-                if (PHP_SAPI === 'cli') print_r("Parametro opcional não encontrado no DE-PARA: {{$optionName}}->{{$optionToSearch}}->{{$parameter}}");
+                if (PHP_SAPI === 'cli') print_r("[HUB] - Parametro opcional não encontrado no DE-PARA: {{$optionName}}->{{$optionToSearch}}->{{$parameter}}");
 
                 throw new OptionIDNotExists("Parametro opcional não encontrado no DE-PARA: {{$optionName}}->{{$optionToSearch}}->{{$parameter}}");
             }

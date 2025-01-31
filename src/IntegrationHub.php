@@ -59,8 +59,8 @@ class IntegrationHub {
         }
         
         if (PHP_SAPI === 'cli') {
-            print_r("$classPrefix file: $file\n");
-            print_r("$classPrefix className: $className\n");
+            print_r("[HUB] - $classPrefix file: $file\n");
+            print_r("[HUB] - $classPrefix className: $className\n");
         }
         
         require_once($file);

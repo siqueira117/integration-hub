@@ -12,7 +12,7 @@ class SGU extends AbstractIntegrationModel {
     public function build(): array 
     {
         syslog(LOG_NOTICE, "[HUB] - " . __METHOD__);
-        if (PHP_SAPI === 'cli') print_r("Construindo bodyRequest...\n");
+        if (PHP_SAPI === 'cli') print_r("[HUB] - Construindo bodyRequest...\n");
 
         syslog(LOG_NOTICE, "[HUB] - Construindo bodyRequest...");
 
@@ -421,7 +421,7 @@ class SGU extends AbstractIntegrationModel {
     public function send(array $bodyRequest): array 
     {
         syslog(LOG_NOTICE, __METHOD__);
-        if (PHP_SAPI === 'cli') print_r("Realizando requisição...\n");
+        if (PHP_SAPI === 'cli') print_r("[HUB] - Realizando requisição...\n");
 
         $envData = $this->getConfig()->getEnvData()["sendProposal"];
         

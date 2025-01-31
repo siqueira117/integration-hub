@@ -127,11 +127,11 @@ class CurlRequest
         syslog(LOG_NOTICE, ">> HTTP Code: $httpcode");
 
         if (PHP_SAPI === 'cli') {
-            print_r(">> Endpoint: " . $this->endpoint."\n");
-            print_r(">> BodyRequest: " . $this->bodyRequest."\n");
-            print_r(">> Tempo de resposta: $httptime\n");
-            print_r(">> HTTP Code: $httpcode\n");
-            print_r(">> Response: $responseOriginal\n");
+            print_r("[HUB] - >> Endpoint: " . $this->endpoint."\n");
+            print_r("[HUB] - >> BodyRequest: " . $this->bodyRequest."\n");
+            print_r("[HUB] - >> Tempo de resposta: $httptime\n");
+            print_r("[HUB] - >> HTTP Code: $httpcode\n");
+            print_r("[HUB] - >> Response: $responseOriginal\n");
         }
 
         // Interpretando retorno da API
