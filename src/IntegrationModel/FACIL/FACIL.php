@@ -36,7 +36,7 @@ class FACIL extends AbstractIntegrationModel
         return $proposal;
     }
 
-    private function buildContrato(): array
+    protected function buildContrato(): array
     {
         return [
             'total_valor'           => $this->payload->getValorContrato() ?? '',
@@ -131,7 +131,7 @@ class FACIL extends AbstractIntegrationModel
                         // 'codigo_premium'   => (int)$titular['record_plano']['codigo_premium']   ?? ''
                     ],
                     'sexo'            => $beneficiario['sexo']                                   ?? '',
-                    'estado_civil'    => $this->parameters->getOptionFrom('estado_civil', $beneficiario['estado_civil']),
+                    'estado_civil'    => $this->parameters->getOptionFrom('estadoCivil', $beneficiario['estado_civil']),
                     'nome_mae'        => $beneficiario['nome_mae']                               ?? '',
                     'tipo'            => ($benKey === 0) ? "1" : "2",
                     // 'grau_parentesco' => (int)$beneficiario["parentesco"] ?? 10,

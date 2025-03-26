@@ -26,23 +26,22 @@ class IntegrationHub {
     private Parameters $parameters;
     private Config $config;
     private string $integrationName;
+    private string $operadora;
 
     // MODELO DE INTEGRAÇÃO
     private AbstractIntegrationModel $integrationModel; 
 
-    public function __construct(int $integrationType, ?array $payload = null, ?array $jsonConfig = null, ?array $parameters = null)
+    public function __construct(int $integrationType, ?string $operadora = null, ?array $payload = null, ?array $jsonConfig = null, ?array $parameters = null)
     {
         if ($integrationType)   $this->setIntegrationType($integrationType);
         if ($payload)           $this->setPayload($payload);
         if ($parameters)        $this->setParameters($parameters);
         if ($jsonConfig)        $this->setConfig($jsonConfig);
+        if ($operadora)         $this->setOperadora($operadora);
 
         $this->validator = $this->checkAndCreateObject("Validator");    
     }
 
-    /**
-     * 
-     */
     public function run() 
     {
         // Cria a classe de configuração da integração
@@ -59,7 +58,7 @@ class IntegrationHub {
         }
     }
 
-    public function replaceAndAddFieldsOnPayload(array $fields): array
+    public function replaceAndAddFieldsOnPayload(array $fields): self
     {
         if (!isset($this->originalPayload)) {
             throw new InvalidClassException("Payload deve ser informado");
@@ -67,7 +66,7 @@ class IntegrationHub {
 
         $this->newPayload = array_merge($this->originalPayload, $fields);
         $this->payload  = new Payload($this->newPayload);
-        return $this->newPayload;
+        return $this;
     }
 
     public function getBodyRequest(): array
@@ -123,7 +122,7 @@ class IntegrationHub {
 
         $this->validateClasses();
         require_once($file);
-        return new $className($this->payload, $this->parameters, $this->validator, $this->config);
+        return $className::factory($this->integrationName, $this->payload, $this->parameters, $this->validator, $this->config, $this->operadora);
     }
 
     private function validateClasses(): void
@@ -132,7 +131,8 @@ class IntegrationHub {
             "Payload"   => isset($this->payload),
             "Parameter" => isset($this->parameters),
             "Validator" => isset($this->validator),
-            "Config"    => isset($this->config)
+            "Config"    => isset($this->config),
+            "Operadora" => isset($this->operadora)
         ];
 
         $classes = array_filter($classes, function ($v) {
@@ -182,6 +182,17 @@ class IntegrationHub {
         $this->config = $this->checkAndCreateObject("Config", $jsonConfig);
         return $this;
     }
+
+    public function setOperadora(string $operadora): self
+    {
+        $operadoraName = str_replace("-", "", $operadora);
+        if (is_numeric($operadoraName[0])) {
+            $operadoraName = "_" . $operadoraName;
+        }
+
+        $this->operadora = $operadoraName;
+        return $this;
+    }
     // ===============
 
     // GETTERS
@@ -195,5 +206,10 @@ class IntegrationHub {
         if (!isset($this->newPayload)) throw new InvalidClassException("Payload não foi modificado");
          
         return $this->newPayload;
+    }
+
+    public function getOperadora(): string
+    {
+        return $this->operadora;
     }
 }

@@ -83,7 +83,7 @@ class CurlRequest
 
     public function send(): ?array
     {
-        syslog(LOG_NOTICE, "Preparando requisição...");
+        syslog(LOG_NOTICE, "[HUB] - Preparando requisição...");
 
         $curl = $this->curl;
 
@@ -98,16 +98,16 @@ class CurlRequest
             CURLOPT_CUSTOMREQUEST   => $this->method,
         ];
 
-        syslog(LOG_NOTICE, ">> Method: " . $this->method);
+        syslog(LOG_NOTICE, "[HUB] - >> Method: " . $this->method);
 
         if ($this->headers) {
             $curlOptions[CURLOPT_HTTPHEADER] = $this->headers;
-            syslog(LOG_NOTICE, ">> Headers: " . json_encode($this->headers));
+            syslog(LOG_NOTICE, "[HUB] - >> Headers: " . json_encode($this->headers));
         }
 
         if ($this->bodyRequest) {
             $bodyRequest = is_array($this->bodyRequest) ? json_encode($this->bodyRequest) : $this->bodyRequest;
-            syslog(LOG_NOTICE, ">> BodyRequest: $bodyRequest");
+            syslog(LOG_NOTICE, "[HUB] - >> BodyRequest: $bodyRequest");
             
             $curlOptions[CURLOPT_POSTFIELDS] = $this->bodyRequest;
         }
@@ -115,16 +115,16 @@ class CurlRequest
         curl_setopt_array($curl, $curlOptions);
 
         $responseOriginal = trim(curl_exec($curl));
-        syslog(LOG_NOTICE, ">> Response: $responseOriginal");
+        syslog(LOG_NOTICE, "[HUB] - >> Response: $responseOriginal");
 
         $response = json_decode($responseOriginal, true);
         $curlerro = curl_error($curl);
         $httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         $httptime = curl_getinfo($curl, CURLINFO_TOTAL_TIME);
 
-        syslog(LOG_NOTICE, ">> Endpoint: " . $this->endpoint);
-        syslog(LOG_NOTICE, ">> Tempo de resposta: $httptime");
-        syslog(LOG_NOTICE, ">> HTTP Code: $httpcode");
+        syslog(LOG_NOTICE, "[HUB] - >> Endpoint: " . $this->endpoint);
+        syslog(LOG_NOTICE, "[HUB] - >> Tempo de resposta: $httptime");
+        syslog(LOG_NOTICE, "[HUB] - >> HTTP Code: $httpcode");
 
         if (PHP_SAPI === 'cli') {
             print_r("[HUB] - >> Endpoint: " . $this->endpoint."\n");
