@@ -113,38 +113,43 @@ class MEDEX extends AbstractIntegrationModel {
     public function send(array $bodyRequest): array
     {
         syslog(LOG_NOTICE, "[HUB] - " . __METHOD__);
-        $curl = new CurlRequest();
-        $envData = $this->getConfig()->getEnvData();
+        try {
+            $curl = new CurlRequest();
+            $envData = $this->getConfig()->getEnvData();
 
-        // RECUPERA TOKEN
-        $token = base64_encode($envData["auth"]["user"].":".$envData["auth"]["pass"]);
-        $response = $curl
-            ->setEndpoint($envData["auth"]["endpoint"])
-            ->setMethod($envData["auth"]["method"])
-            ->setHeaders([
-                "Content-Type: application/x-www-form-urlencoded",
-                "Authorization: Basic $token",
-            ])
-            ->setBodyRequest('grant_type=client_credentials&scope=operations%2Fform')
-            ->send();
-        
-        $accessToken = $response["access_token"];
-        // ============================
+            // RECUPERA TOKEN
+            $token = base64_encode($envData["auth"]["user"].":".$envData["auth"]["pass"]);
+            $response = $curl
+                ->setEndpoint($envData["auth"]["endpoint"])
+                ->setMethod($envData["auth"]["method"])
+                ->setHeaders([
+                    "Content-Type: application/x-www-form-urlencoded",
+                    "Authorization: Basic $token",
+                ])
+                ->setBodyRequest('grant_type=client_credentials&scope=operations%2Fform')
+                ->send();
+                
+            $accessToken = $response["access_token"];
+            // ============================
 
-        // ENVIA DS
-        $response = $curl
-            ->setEndpoint($envData["sendHealth"]["endpoint"])
-            ->setMethod($envData["sendHealth"]["method"])
-            ->setHeaders([
-                "Content-Type: application/json",
-                "x-partner-hash: " . $envData["sendHealth"]["hash"],
-                "authorization: Bearer $accessToken"
-            ])
-            ->setBodyRequest(json_encode($bodyRequest))
-            ->send();
-        // ============================
+            // ENVIA DS
+            $response = $curl
+                ->setEndpoint($envData["sendHealth"]["endpoint"])
+                ->setMethod($envData["sendHealth"]["method"])
+                ->setHeaders([
+                    "Content-Type: application/json",
+                    "x-partner-hash: " . $envData["sendHealth"]["hash"],
+                    "authorization: Bearer $accessToken"
+                ])
+                ->setBodyRequest(json_encode($bodyRequest))
+                ->send();
+            // ============================
 
-        return ["retcode" => -1, "message" => $response];
+            return ["retcode" => 0, "message" => $response];
+        } catch (\IntegrationHub\Exception\CurlRequestException $e) {
+            syslog(LOG_NOTICE, "[HUB][ERR] - " . $e->getMessage());
+            return ["retcode" => -1, "message" => $e->getMessage()];
+        }
     }
 
     public function getType(): int { return CONN_API; }

@@ -129,6 +129,12 @@ class Payload
         return $data->format($format);
     }
 
+    public function getDataAtual(string $format = "Y-m-d"): string
+    {
+        $data = DateTime::createFromFormat("Y-m-d", $this->payload["data_atual"]);
+        return $data->format($format);
+    }
+
     public function getTipoProduto(): string
     {
         return $this->payload["contrato"]["produtos"][0];

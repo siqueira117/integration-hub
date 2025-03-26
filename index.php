@@ -41,4 +41,4 @@ function integraSGU()
     }
 }
 
-integraSGU();
+integraMedex();

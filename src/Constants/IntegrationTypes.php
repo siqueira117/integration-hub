@@ -3,6 +3,7 @@
 // Tipos de ERP
 define("TYPE_SGU", 1);
 define("TYPE_MEDEX", 2);
+define("TYPE_FACIL", 3);
 
 // Tipos de conexão
 define("CONN_API", 10);
