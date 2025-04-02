@@ -7,7 +7,7 @@ use IntegrationHub\Request\CurlRequest;
 
 class FACIL extends AbstractIntegrationModel
 {
-    public function build(): array
+    protected function build(): array
     {
         syslog(LOG_NOTICE, "[HUB] - " . __METHOD__);
         if (PHP_SAPI === 'cli') print_r("[HUB] - Construindo bodyRequest...\n");
@@ -46,7 +46,7 @@ class FACIL extends AbstractIntegrationModel
         ];
     }
 
-    private function buildCorretagem(): array
+    protected function buildCorretagem(): array
     {
         $corretagem = $this->payload->getCorretagem();
 
@@ -68,7 +68,7 @@ class FACIL extends AbstractIntegrationModel
         ];
     }
 
-    private function buildEmpresa(): array
+    protected function buildEmpresa(): array
     {
         $empresa = $this->payload->getContratante();
 
@@ -107,7 +107,7 @@ class FACIL extends AbstractIntegrationModel
         ];
     }
 
-    private function buildBeneficiarios(): array
+    protected function buildBeneficiarios(): array
     {
         $beneficiarios = $this->payload->getBeneficiarios();
         foreach ($beneficiarios as $famKey => $familia) {
@@ -131,7 +131,7 @@ class FACIL extends AbstractIntegrationModel
                         // 'codigo_premium'   => (int)$titular['record_plano']['codigo_premium']   ?? ''
                     ],
                     'sexo'            => $beneficiario['sexo']                                   ?? '',
-                    'estado_civil'    => $this->parameters->getOptionFrom('estadoCivil', $beneficiario['estado_civil']),
+                    'estado_civil'    => $this->options->getOptionFrom('estadoCivil', $beneficiario['estado_civil']),
                     'nome_mae'        => $beneficiario['nome_mae']                               ?? '',
                     'tipo'            => ($benKey === 0) ? "1" : "2",
                     // 'grau_parentesco' => (int)$beneficiario["parentesco"] ?? 10,
@@ -180,7 +180,7 @@ class FACIL extends AbstractIntegrationModel
         return $newBeneficiarios;
     }
 
-    private function buildPlanos(): array {
+    protected function buildPlanos(): array {
         $vigencia   = $this->payload->getDataVigencia('m/Y');
         $titulares  = [];
         $planos     = [];
@@ -204,7 +204,7 @@ class FACIL extends AbstractIntegrationModel
         return $planos;
     }
 
-    private function getFaixas(): array 
+    protected function getFaixas(): array 
     {
         $faixas = [
             [
@@ -252,7 +252,7 @@ class FACIL extends AbstractIntegrationModel
         return $faixas;
     }
 
-    private function getFaixasPlanos(array $titular): array 
+    protected function getFaixasPlanos(array $titular): array 
     {
         $codigoProduto = (int)$titular["plano_id"];
         $recordPreco = $titular["record_preco"];

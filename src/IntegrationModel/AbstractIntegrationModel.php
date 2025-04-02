@@ -2,19 +2,19 @@
 
 namespace IntegrationHub\IntegrationModel;
 
-use IntegrationHub\Rules\Parameters;
-use IntegrationHub\Rules\{Config, Validator, Payload};
+use IntegrationHub\Rules\Options;
+use IntegrationHub\Rules\{Config, Logger, Validator, Payload};
 
 if (!defined('CUSTOMDIR')) define("CUSTOMDIR", realpath(__DIR__ . '/../../../../custom'));
 
 abstract class AbstractIntegrationModel {
 	private const NAMESPACE_INTEGRATION = "\\IntegrationHub\IntegrationModel";
     protected Payload           $payload;
-    protected Parameters   $parameters;
+    protected Options           $options;
     protected Validator         $validator;
     protected Config            $config;
 
-    public static function factory(string $integracaoName, Payload $payload, Parameters $parameters, Validator $validator, Config $config, ?string $operadora = null)
+    public static function factory(string $integracaoName, Payload $payload, Options $options, Validator $validator, Config $config, ?string $operadora = null)
 	{
 		$operadora = $operadora ?? \ENVIRONMENT\hostname();
 
@@ -31,26 +31,26 @@ abstract class AbstractIntegrationModel {
         $className = self::NAMESPACE_INTEGRATION . "\\$integracaoName\\{$operadoraName}{$integracaoName}";
 
         if (file_exists($file)) {
-            syslog(LOG_NOTICE, "[HUB] - Classe custom encontrada: $className");
+            Logger::message(LOG_NOTICE, "Classe custom encontrada: $className");
             require_once($file);
         } else {
-            syslog(LOG_NOTICE, "[HUB] - Classe custom não encontrada, tentando classe padrão.");
-
             // Classe padrão no namespace correto
             $className = self::NAMESPACE_INTEGRATION . "\\$integracaoName\\{$integracaoName}";
 
+            Logger::message(LOG_NOTICE, "Classe custom não encontrada, tentando classe padrão: $className");
+
             if (!class_exists($className)) {
-                throw new \Exception("Nenhuma implementação encontrada para {$integracaoName}.");
+                throw new \Exception("Nenhuma implementação encontrada para {$integracaoName} - " . __CLASS__);
             }
         }
 
-        return new $className($payload, $parameters, $validator, $config);
+        return new $className($payload, $options, $validator, $config);
 	}
 
-    public function __construct(Payload $payload, Parameters $parameters, Validator $validator, Config $config)
+    public function __construct(Payload $payload, Options $options, Validator $validator, Config $config)
     {
         $this->payload      = $payload;
-        $this->parameters   = $parameters;
+        $this->options      = $options;
         $this->validator    = $validator;
         $this->config       = $config;
     }

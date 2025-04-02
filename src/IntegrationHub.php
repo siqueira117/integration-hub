@@ -2,19 +2,14 @@
 
 namespace IntegrationHub;
 
-use IntegrationHub\Exception\FileNotExistsException;
-use IntegrationHub\Exception\ConectionTypeNotExists;
-use IntegrationHub\Exception\IntegrationHub\IntegrationTypeNotExists;
-use IntegrationHub\Exception\IntegrationHub\InvalidClassException;
+use IntegrationHub\Exception\{FileNotExistsException, ConectionTypeNotExists};
+use IntegrationHub\Exception\IntegrationHub\{IntegrationTypeNotExists, InvalidClassException};
 use IntegrationHub\IntegrationModel\AbstractIntegrationModel;
-use IntegrationHub\Rules\Parameters;
-use IntegrationHub\Rules\Config;
-use IntegrationHub\Rules\Payload;
-use IntegrationHub\Rules\Validator;
+use IntegrationHub\Rules\{Options, Config, Logger, Payload, Validator, Variables};
 
 class IntegrationHub {
     // CONSTANTS
-    private const INTEGRATION_TYPES     = [ 1 => "SGU", 2 => "MEDEX", 3 => "FACIL" ];
+    private const INTEGRATION_TYPES     = [ 1 => "SGU", 2 => "MEDEX", 3 => "FACIL", 4 => "CBS" ];
     private const NAMESPACE_INTEGRATION = "\\IntegrationHub\IntegrationModel";
     private const NAMESPACE_RULES       = "\\IntegrationHub\Rules";
 
@@ -23,7 +18,7 @@ class IntegrationHub {
     private array $originalPayload;
     private array $newPayload;
     private Validator $validator;
-    private Parameters $parameters;
+    private Options $options;
     private Config $config;
     private string $integrationName;
     private string $operadora;
@@ -31,13 +26,14 @@ class IntegrationHub {
     // MODELO DE INTEGRAÇÃO
     private AbstractIntegrationModel $integrationModel; 
 
-    public function __construct(int $integrationType, ?string $operadora = null, ?array $payload = null, ?array $jsonConfig = null, ?array $parameters = null)
+    public function __construct(int $integrationType, string $operadora, ?array $payload = null, ?array $jsonConfig = null, ?array $options = null)
     {
+        Logger::message(LOG_NOTICE, "Construindo classe...");
+        if ($operadora)         $this->setOperadora($operadora);
         if ($integrationType)   $this->setIntegrationType($integrationType);
         if ($payload)           $this->setPayload($payload);
-        if ($parameters)        $this->setParameters($parameters);
+        if ($options)           $this->setOptions($options);
         if ($jsonConfig)        $this->setConfig($jsonConfig);
-        if ($operadora)         $this->setOperadora($operadora);
 
         $this->validator = $this->checkAndCreateObject("Validator");    
     }
@@ -76,7 +72,7 @@ class IntegrationHub {
         return $this->integrationModel->build();
     }
 
-    private function checkAndCreateObject(string $classPrefix, $parametersToObject = null) 
+    private function checkAndCreateObject(string $classPrefix, $optionsToObject = null) 
     {
         if (PHP_SAPI === 'cli') print_r("[HUB] - Criando objeto $classPrefix\n");
 
@@ -85,7 +81,7 @@ class IntegrationHub {
         $file       = __DIR__."/IntegrationModel/$integrationName/$classPrefix$integrationName.php";
         $className  = self::NAMESPACE_INTEGRATION . "\\$integrationName\\$classPrefix$integrationName"; 
         if (!file_exists($file)) {
-            syslog(LOG_NOTICE, "[HUB] - $classPrefix padrão sendo utilizado!");
+            Logger::message(LOG_NOTICE, "$classPrefix padrão sendo utilizado!");
             if (PHP_SAPI === 'cli') print_r("[HUB] - $classPrefix padrão sendo utilizado!\n");
             
             $file = __DIR__."/Rules/$classPrefix.php";
@@ -103,33 +99,37 @@ class IntegrationHub {
         
         require_once($file);
 
-        if ($parametersToObject) return new $className($parametersToObject); 
+        if ($optionsToObject) {
+            if (method_exists($className, "factory")) {
+                return $className::factory($this->integrationName, $this->operadora, $optionsToObject);
+            } else {
+                return new $className($optionsToObject);
+            }
+        }
+
         return new $className();
     }
 
-    /**
-     * 
-     */
     private function createIntegration(): AbstractIntegrationModel 
     {
-        $integrationName = $this->integrationName;
-        $file       = __DIR__."/IntegrationModel/$integrationName/$integrationName.php";
-        $className  = self::NAMESPACE_INTEGRATION . "\\$integrationName\\$integrationName"; 
+        $integrationName    = $this->integrationName;
+        $file               = __DIR__."/IntegrationModel/$integrationName/$integrationName.php";
+        $className          = self::NAMESPACE_INTEGRATION . "\\$integrationName\\$integrationName"; 
         if (!file_exists($file)) {
-            syslog(LOG_ERR, "[HUB][ERR] - Arquivo de configuração '$integrationName' não foi configurado");
+            Logger::message(LOG_ERR, "Arquivo de configuração '$integrationName' não foi configurado");
             throw new FileNotExistsException("Arquivo de configuração '$integrationName' não foi configurado");
         }
 
         $this->validateClasses();
         require_once($file);
-        return $className::factory($this->integrationName, $this->payload, $this->parameters, $this->validator, $this->config, $this->operadora);
+        return $className::factory($this->integrationName, $this->payload, $this->options, $this->validator, $this->config, $this->operadora);
     }
 
     private function validateClasses(): void
     {
         $classes = [
             "Payload"   => isset($this->payload),
-            "Parameter" => isset($this->parameters),
+            "Options"   => isset($this->options),
             "Validator" => isset($this->validator),
             "Config"    => isset($this->config),
             "Operadora" => isset($this->operadora)
@@ -145,10 +145,10 @@ class IntegrationHub {
         }
     }
 
-    private function runApi() 
+    private function runApi(): array 
     {
         $json = $this->integrationModel->build();
-        $this->integrationModel->send($json);
+        return $this->integrationModel->send($json);
     }
 
     // SETTERS
@@ -168,12 +168,14 @@ class IntegrationHub {
     {
         $this->originalPayload = $payload;
         $this->payload = new Payload($payload);
+
+        Variables::add("PROPOSTA_ID", $payload["propostaID"]);
         return $this;
     }
 
-    public function setParameters(array $parameters): self
+    public function setOptions(array $options): self
     {
-        $this->parameters = $this->checkAndCreateObject("Parameters", $parameters);
+        $this->options = $this->checkAndCreateObject("Options", $options);
         return $this;
     }
 

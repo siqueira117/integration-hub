@@ -119,19 +119,19 @@ class Payload
 
     public function getDataAssinatura(string $format = "Y-m-d"): string
     {
-        $data = DateTime::createFromFormat("Y-m-d", $this->payload["data_assinatura"]);
+        $data = \DateTime::createFromFormat("Y-m-d", $this->payload["data_assinatura"]);
         return $data->format($format);
     }
 
     public function getDataVigencia(string $format = "Y-m-d"): string
     {
-        $data = DateTime::createFromFormat("Y-m-d", $this->payload["contrato"]["data_vigencia"]);
+        $data = \DateTime::createFromFormat("Y-m-d", $this->payload["contrato"]["data_vigencia"]);
         return $data->format($format);
     }
 
     public function getDataAtual(string $format = "Y-m-d"): string
     {
-        $data = DateTime::createFromFormat("Y-m-d", $this->payload["data_atual"]);
+        $data = \DateTime::createFromFormat("Y-m-d", $this->payload["data_atual"]);
         return $data->format($format);
     }
 
@@ -203,10 +203,10 @@ class Payload
         $proposal   = $this->payload;
 
         if (array_key_exists("proposta_pdf_url", $proposal)) { // Verifica se o link do PDF já está no payload
-            syslog(LOG_NOTICE, ">>>>>>> Payload possui a chave 'proposta_pdf_url' ");
+            syslog(LOG_NOTICE, "[HUB] - >>>>>>> Payload possui a chave 'proposta_pdf_url' ");
             return $proposal["proposta_pdf_url"];
         } else { // Se não tiver, montamos ele a partir dos dados da proposta.
-            syslog(LOG_NOTICE, ">>>>>>> Não possui a chave 'proposta_pdf_url' ");
+            syslog(LOG_NOTICE, "[HUB] - >>>>>>> Não possui a chave 'proposta_pdf_url' ");
             $svcurl = $proposal["hostname"];
             $data_atual = $proposal["data_atual"];
             $year  = substr($data_atual, 0, 4);
@@ -238,7 +238,7 @@ class Payload
         }
 
         if (Environment::isTest()) {
-            syslog(LOG_NOTICE, ">>>>>>> PDF: $pdf");
+            syslog(LOG_NOTICE, "[HUB] - >>>>>>> PDF: $pdf");
         }
 
         return $pdf;
@@ -324,7 +324,7 @@ class Payload
         return $stringLimpa;
     }
 
-    public function getPlanoTitular(string $uuid): string
+    public function getPlanoTitular(string $uuid): ?string
     {
         $beneficiarios = $this->payload["beneficiarios"];
 
@@ -335,6 +335,8 @@ class Payload
                 }
             }
         }
+
+        return null;
     }
 
     public function getNumVidas(): int {

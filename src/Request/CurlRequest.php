@@ -3,6 +3,7 @@
 namespace IntegrationHub\Request;
 
 use IntegrationHub\Exception\CurlRequestException;
+use IntegrationHub\Rules\Logger;
 
 class CurlRequest
 {
@@ -13,6 +14,8 @@ class CurlRequest
     private $curl;
     private $response;
     private $httpcode;
+    private $responseHeaders;
+    private $allowedMethods;
 
     public function __construct()
     {
@@ -41,7 +44,7 @@ class CurlRequest
         return $this;
     }
 
-    public function setResponse(?array $response): void
+    private function setResponse(?array $response): void
     {
         $this->response = $response;
     }
@@ -51,7 +54,7 @@ class CurlRequest
         return $this->response;
     }
 
-    public function setHttpCode(int $httpcode): void
+    private function setHttpCode(int $httpcode): void
     {
         $this->httpcode = $httpcode;
     }
@@ -64,6 +67,27 @@ class CurlRequest
     public function getHttpCode(): int
     {
         return $this->httpcode;
+    }
+
+    public function setAllowedMethods(array $methods): self
+    {
+        $this->allowedMethods = $methods;
+        return $this;
+    }
+
+    private function getAllowedMethods(): ?array
+    {
+        return $this->allowedMethods;
+    }
+
+    private function setResponseHeaders(array $headers): void
+    {
+        $this->responseHeaders = $headers;
+    }
+
+    public function getResponseHeaders(): array
+    {
+        return $this->responseHeaders;
     }
 
     public function setBodyRequest(string $bodyRequest): self
@@ -81,9 +105,29 @@ class CurlRequest
         $this->bodyRequest  = null;
     }
 
+    private function headersToArray(string $str): array {
+        $headers = array();
+        $headersTmpArray = explode( "\r\n" , $str );
+        for ( $i = 0 ; $i < count( $headersTmpArray ) ; ++$i )
+        {
+            // we dont care about the two \r\n lines at the end of the headers
+            if ( strlen( $headersTmpArray[$i] ) > 0 )
+            {
+                // the headers start with HTTP status codes, which do not contain a colon so we can filter them out too
+                if ( strpos( $headersTmpArray[$i] , ":" ) )
+                {
+                    $headerName = substr( $headersTmpArray[$i] , 0 , strpos( $headersTmpArray[$i] , ":" ) );
+                    $headerValue = substr( $headersTmpArray[$i] , strpos( $headersTmpArray[$i] , ":" )+1 );
+                    $headers[$headerName] = $headerValue;
+                }
+            }
+        }
+        return $headers;
+    }
+
     public function send(): ?array
     {
-        syslog(LOG_NOTICE, "[HUB] - Preparando requisição...");
+        Logger::message(LOG_NOTICE, "Preparando requisição...");
 
         $curl = $this->curl;
 
@@ -95,19 +139,20 @@ class CurlRequest
             CURLOPT_TIMEOUT         => 0,
             CURLOPT_FOLLOWLOCATION  => true,
             CURLOPT_HTTP_VERSION    => CURL_HTTP_VERSION_1_1,
+            CURLOPT_HEADER          => true,
             CURLOPT_CUSTOMREQUEST   => $this->method,
         ];
 
-        syslog(LOG_NOTICE, "[HUB] - >> Method: " . $this->method);
+        Logger::message(LOG_NOTICE, ">> Method: " . $this->method);
 
         if ($this->headers) {
             $curlOptions[CURLOPT_HTTPHEADER] = $this->headers;
-            syslog(LOG_NOTICE, "[HUB] - >> Headers: " . json_encode($this->headers));
+            Logger::message(LOG_NOTICE, ">> Headers: " . json_encode($this->headers));
         }
 
         if ($this->bodyRequest) {
             $bodyRequest = is_array($this->bodyRequest) ? json_encode($this->bodyRequest) : $this->bodyRequest;
-            syslog(LOG_NOTICE, "[HUB] - >> BodyRequest: $bodyRequest");
+            Logger::message(LOG_NOTICE, ">> BodyRequest: $bodyRequest");
             
             $curlOptions[CURLOPT_POSTFIELDS] = $this->bodyRequest;
         }
@@ -115,23 +160,30 @@ class CurlRequest
         curl_setopt_array($curl, $curlOptions);
 
         $responseOriginal = trim(curl_exec($curl));
-        syslog(LOG_NOTICE, "[HUB] - >> Response: $responseOriginal");
+        
+        $curlerro   = curl_error($curl);
+        $httpcode   = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $httptime   = curl_getinfo($curl, CURLINFO_TOTAL_TIME);
+        
+        // HEADER
+        $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
+        $headerStr  = substr( $responseOriginal , 0 , $headerSize );
+        $response   = substr( $responseOriginal , $headerSize );
+        $headers    = $this->headersToArray($headerStr);
 
-        $response = json_decode($responseOriginal, true);
-        $curlerro = curl_error($curl);
-        $httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        $httptime = curl_getinfo($curl, CURLINFO_TOTAL_TIME);
+        $response = json_decode($response, true);
 
-        syslog(LOG_NOTICE, "[HUB] - >> Endpoint: " . $this->endpoint);
-        syslog(LOG_NOTICE, "[HUB] - >> Tempo de resposta: $httptime");
-        syslog(LOG_NOTICE, "[HUB] - >> HTTP Code: $httpcode");
+        Logger::message(LOG_NOTICE, ">> Endpoint: " . $this->endpoint);
+        Logger::message(LOG_NOTICE, ">> Tempo de resposta: $httptime");
+        Logger::message(LOG_NOTICE, ">> HTTP Code: $httpcode");
+        Logger::message(LOG_NOTICE, ">> Response: " . json_encode($response) . "\n");
 
         if (PHP_SAPI === 'cli') {
             print_r("[HUB] - >> Endpoint: " . $this->endpoint."\n");
             print_r("[HUB] - >> BodyRequest: " . $this->bodyRequest."\n");
             print_r("[HUB] - >> Tempo de resposta: $httptime\n");
             print_r("[HUB] - >> HTTP Code: $httpcode\n");
-            print_r("[HUB] - >> Response: $responseOriginal\n");
+            print_r("[HUB] - >> Response: " . json_encode($response) . "\n");
         }
 
         // Interpretando retorno da API
@@ -139,12 +191,14 @@ class CurlRequest
             throw new CurlRequestException("Curl error # $curlerro");
         }
 
-        if (!in_array($httpcode, [200, 201])) {
+        $allowedMethods = $this->getAllowedMethods() ?? [200, 201]; 
+        if (!in_array($httpcode, $allowedMethods)) {
             throw new CurlRequestException("Erro ao realizar requisição: HTTP Code $httpcode");
         }
 
         $this->setResponse($response);
         $this->setHttpCode($httpcode);
+        $this->setResponseHeaders($headers);
 
         return $response;
     }

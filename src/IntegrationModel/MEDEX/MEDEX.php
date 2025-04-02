@@ -6,7 +6,7 @@ use IntegrationHub\IntegrationModel\AbstractIntegrationModel;
 use IntegrationHub\Request\CurlRequest;
 
 class MEDEX extends AbstractIntegrationModel {
-    public function build(): array
+    protected function build(): array
     {
         syslog(LOG_NOTICE, "[HUB] - " . __METHOD__);
         if (PHP_SAPI === 'cli') print_r("[HUB] - Construindo bodyRequest...\n");
@@ -21,7 +21,7 @@ class MEDEX extends AbstractIntegrationModel {
         return $body;
     }
 
-    private function buildContrato(): array
+    protected function buildContrato(): array
     {
         syslog(LOG_NOTICE, "[HUB] - " . __METHOD__);
         
@@ -36,7 +36,7 @@ class MEDEX extends AbstractIntegrationModel {
         return $arrContrato;
     }
 
-    private function buildBeneficiarios(): array
+    protected function buildBeneficiarios(): array
     {
         syslog(LOG_NOTICE, "[HUB] - " . __METHOD__);
 
@@ -72,7 +72,7 @@ class MEDEX extends AbstractIntegrationModel {
         return $beneficiariosRequest;
     }
 
-    private function buildDS(array $ben): array 
+    protected function buildDS(array $ben): array 
     {        
         syslog(LOG_NOTICE, "[HUB] - " . __METHOD__);
 
@@ -88,7 +88,7 @@ class MEDEX extends AbstractIntegrationModel {
             $idPergunta = (int) $pergunta['id'];
             $arrayDS['perguntas'][] = [
                 "id"                    => $idPergunta,
-                "pergunta"              => $this->parameters->getOptionFrom("perguntasDS", $contratacao, $idPergunta),
+                "pergunta"              => $this->options->getOptionFrom("perguntasDS", $contratacao, $idPergunta),
                 "resposta"              => $this->buildResposta($pergunta)
             ];
         }
@@ -96,7 +96,7 @@ class MEDEX extends AbstractIntegrationModel {
         return $arrayDS;
     }
 
-    private function buildResposta(array $pergunta) 
+    protected function buildResposta(array $pergunta) 
     {
         syslog(LOG_NOTICE, "[HUB] - " . __METHOD__);
 

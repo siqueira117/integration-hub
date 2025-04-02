@@ -6,11 +6,45 @@ use IntegrationHub\Exception\ValidationTypeNotExistsException;
 
 class Validator extends AuxValidator
 {
+    private const NAMESPACE_INTEGRATION = "\\IntegrationHub\IntegrationModel";
     const V_DADOS_GERAIS    = 1;
     const V_CONTRATO        = 2;
     const V_EMPRESA         = 3;
     const V_BENEFICIARIOS   = 4;
     const V_PAYLOAD         = 5;
+
+    public static function factory(string $integracaoName, ?string $operadora = null)
+	{
+		$operadora = $operadora ?? \ENVIRONMENT\hostname();
+
+        // Formata o nome da operadora
+        $operadoraName = str_replace("-", "", $operadora);
+        if (is_numeric($operadoraName[0])) {
+            $operadoraName = "_" . $operadoraName;
+        }
+
+        // Caminho do arquivo
+        $file = CUSTOMDIR . "/{$operadora}/svc/integracao/{$integracaoName}/{$operadoraName}Validator{$integracaoName}.php";
+        
+        // Nome da classe que será instanciada
+        $className = self::NAMESPACE_INTEGRATION . "\\$integracaoName\\{$operadoraName}Validator{$integracaoName}";
+
+        if (file_exists($file)) {
+            syslog(LOG_NOTICE, "[HUB] - Classe custom encontrada: $className");
+            require_once($file);
+        } else {
+            // Classe padrão no namespace correto
+            $className = self::NAMESPACE_INTEGRATION . "\\$integracaoName\\Validator{$integracaoName}";
+
+            Logger::message(LOG_NOTICE, "Classe custom não encontrada, tentando classe padrão: $className");
+
+            if (!class_exists($className)) {
+                throw new \Exception("Nenhuma implementação encontrada para {$integracaoName} - "  . __CLASS__);
+            }
+        }
+
+        return new $className($config);
+	}
 
     /**
      * Recebe dados que devem ser validados, juntamente com o 
@@ -44,6 +78,7 @@ class Validator extends AuxValidator
                 $validations = $this->getBeneficiariosRules();
                 break;
             default:
+                Logger::message(LOG_ERR, "Tipo de validação informado [$tipoValidacao] não existe");
                 throw new ValidationTypeNotExistsException("Tipo de validação informado [$tipoValidacao] não existe");
                 break;
         }

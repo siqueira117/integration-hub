@@ -88,7 +88,7 @@ class SGU extends AbstractIntegrationModel {
                     "data_nasc"                 => date("d/m/Y", strtotime($ben["data_nascimento"])),
                     "nome_mae"                  => $ben["nome_mae"],
                     //"nome_pai"          => null,
-                    "estado_civil"              => $this->parameters->getOptionFrom("estadoCivil", $ben["estado_civil"]),
+                    "estado_civil"              => $this->options->getOptionFrom("estadoCivil", $ben["estado_civil"]),
                     "pais"                      => "32", //BRASIL
                     "local_atendimento"         => null,
                     "tipo_colaborador"          => null,
@@ -97,7 +97,7 @@ class SGU extends AbstractIntegrationModel {
                     "centro_custo"              => null,
                     "data_solic_inclusao"       => $this->payload->getDataVigencia("d/m/Y"),
                     "data_inic_vigencia"        => $this->payload->getDataVigencia("d/m/Y"),
-                    "grau_dependencia"          => $benID === 0 ? "00" : $this->parameters->getOptionFrom("parentesco", $ben["parentesco"]),
+                    "grau_dependencia"          => $benID === 0 ? "00" : $this->options->getOptionFrom("parentesco", $ben["parentesco"]),
                     "titular"                   => $benID === 0 ? true : false,
                     "titular_cartao"            => null,
                     "titular_nascimento"        => date("d/m/Y", strtotime($titular["data_nascimento"])),
@@ -178,11 +178,11 @@ class SGU extends AbstractIntegrationModel {
         );
 
         if (array_key_exists("estado_civil", $respFin)) {
-            $body["estado_civil"] = $this->parameters->getOptionFrom("estadoCivil", $respFin["estado_civil"]);
+            $body["estado_civil"] = $this->options->getOptionFrom("estadoCivil", $respFin["estado_civil"]);
         }
 
         if (array_key_exists("parentesco", $respFin)) {
-            $body["grau_parentesco"] = $this->parameters->getOptionFrom("parentesco", $respFin["parentesco"]);
+            $body["grau_parentesco"] = $this->options->getOptionFrom("parentesco", $respFin["parentesco"]);
         }
 
         return $body;
@@ -227,7 +227,7 @@ class SGU extends AbstractIntegrationModel {
         );
 
         if (array_key_exists("estado_civil", $pessoaResp)) {
-            $body["estado_civil"] = $this->parameters->getOptionFrom("estadoCivil", $pessoaResp["estado_civil"]);        
+            $body["estado_civil"] = $this->options->getOptionFrom("estadoCivil", $pessoaResp["estado_civil"]);        
         }
 
         return $body;
@@ -352,7 +352,7 @@ class SGU extends AbstractIntegrationModel {
             "razao_social"              => $empresa["razaosocial"],
             "pessoa_responsavel_nome"   => $empresa["responsavel"]["nome"],
             "pessoa_responsavel_cpf"    => $empresa["responsavel"]["cpf"],
-            "tipo_societario"           => $this->parameters->getTipoSocietario($empresa["porte"]),
+            "tipo_societario"           => $this->options->getTipoSocietario($empresa["porte"]),
             "nome_fantasia"             => $empresa["nomefantasia"] ?? $empresa["razaosocial"],
             "inscricao_estadual"        => $empresa["inscricaoestadual"],
             "inscricao_municipal"       => $empresa["inscricaomunicipal"],
