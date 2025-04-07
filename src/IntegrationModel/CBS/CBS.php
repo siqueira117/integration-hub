@@ -62,10 +62,12 @@ class CBS extends AbstractIntegrationModel
             $titular = $familia[0];
             foreach ($familia as $ben) {
 
-                if (!$this->beneficiarioAptoParaAgendamento($ben)){
+                if (!$this->beneficiarioAptoParaAgendamento($ben, $titular)){
                     Logger::message(LOG_NOTICE, "Beneficiario {$ben['nome']} não é apto para o agendamento");
                     continue;
                 }
+
+                $nomeFantasia = (empty($contratante['nomefantasia'])) ? $contratante['razaosocial'] : $contratante['nomefantasia'];
 
                 $beneficiarioTratado = [
                     "nomeCorretora"         => $corretagem["corretora"]["nome"],
@@ -74,7 +76,7 @@ class CBS extends AbstractIntegrationModel
                     "cpfVendedor"           => $corretagem["vendedor"]["cpf"],
                     "emailVendedor"         => $corretagem["vendedor"]["email"],
                     "isPJ"                  => $tipoContratacao == "pj" ? true : false,
-                    "nomeFantasia"          => $tipoContratacao == "pj" ? ($contratante["nomefantasia"] ?? $contratante["razaosocial"]) : "",
+                    "nomeFantasia"          => $tipoContratacao == "pj" ? $nomeFantasia : "",
                     "telefoneEmpresa"       => $tipoContratacao == "pj" ? Helper::limparTexto($contratante["responsavel"]["tel_celular"]) : "",
                     "nome"                  => $ben["nome"],
                     "cpf"                   => Helper::limparTexto($ben["cpf"]),
@@ -100,7 +102,7 @@ class CBS extends AbstractIntegrationModel
                     "parentesco"            => strtoupper($this->options->getOptionFrom("parentesco", $ben["parentesco"] ?? "0"))
                 ];
 
-                $beneficiariosArr[] = $beneficiarioTratado;
+                $beneficiariosArr[$ben["cpf"]] = $beneficiarioTratado;
             }
         }
 
@@ -118,11 +120,7 @@ class CBS extends AbstractIntegrationModel
             "storeAsNew"        => true,
             "fileTypeId"        => $fileTypeId,
             "documentDate"      => date("Y-m-d"),
-            "uploads" => [ 
-                [
-                    "id" => $dadosDocumentos['id']
-                ]
-            ],
+            "uploads" => [ [ "id" => $dadosDocumentos['id'] ] ],
             "keywordCollection" => [
                 "keywordGuid"   => $dadosDocumentos['keywordGuid'],
                 "items"         => $this->buildItems($beneficiario)
@@ -198,7 +196,14 @@ class CBS extends AbstractIntegrationModel
         return $arrayItems;
     }
 
-    protected function beneficiarioAptoParaAgendamento(array $beneficiario): bool
+    /**
+     * Realiza validações para definir se beneficiario é apto para o agendamento
+     * 
+     * @param array $beneficiario Dados do beneficiario a ser validado
+     * @param array $titular Titular do beneficiario a ser validado
+     * @return bool Deve retornar true caso o beneficiario seja apto para o agendamento
+     */
+    protected function beneficiarioAptoParaAgendamento(array $beneficiario, array $titular): bool
     {
         return true;
     }
@@ -208,15 +213,14 @@ class CBS extends AbstractIntegrationModel
         syslog(LOG_NOTICE, "[HUB] - " . __METHOD__);
         try {
             $token              = $this->getTokenForAPI();
-            $dadosDocumentos    = $this->sendDocumentAndGetData($bodyRequest["documento"], $token);
             $beneficiarios      = $bodyRequest["beneficiarios"];
-
             $curl               = new CurlRequest();
             $envData            = $this->getConfig()->getEnvData();
             foreach ($beneficiarios as $ben) {
                 Logger::message(LOG_NOTICE, "Enviando {$ben['nome']} para CBS...");
-                
-                $requestBody = $this->buildRequestBeneficiario($ben, $dadosDocumentos);
+
+                $dadosDocumentos    = $this->sendDocumentAndGetData($bodyRequest["documento"], $token);
+                $requestBody        = $this->buildRequestBeneficiario($ben, $dadosDocumentos);
                 $curl
                     ->setEndpoint($envData["sendBeneficiary"]["endpoint"])
                     ->setMethod($envData["sendBeneficiary"]["method"])
@@ -230,16 +234,25 @@ class CBS extends AbstractIntegrationModel
 
                 $response = $curl->getResponse();
                 $headers = $curl->getResponseHeaders();
-                $dadosEntrevista[] = [ 
-                    'entrevista_id'     => $response['id'], 
-                    'entrevista_link'   => $envData['interview']['url'] . "{$response['id']}",
-                    'cpf'               => $ben['cpf'],
-                    'headers'           => $headers['Set-Cookie']
+                $dadosEntrevista[$ben["cpf"]] = [
+                    "cpf"               => $ben["cpf"],
+                    "status"            => "AGUARDANDO AGENDAMENTO",
+                    "entrevista_id"     => $response['id'],
+                    "entrevista_link"   => $envData['interview']['url'] . "{$response['id']}"
                 ];
+
+                $this->disconnectSession($dadosDocumentos["cookie"], $token);
             }
 
-            $this->disconnectSession($dadosDocumentos["cookie"], $token);
-            return [ "retcode" => 0, "message" => "OK", "dadosEntrevista" => $dadosEntrevista ];
+            return [ 
+                "retcode"                   => 0, 
+                "message"                   => "OK", 
+                "dados_agendamentos"        => isset($dadosEntrevista) ? $dadosEntrevista : [],
+                "aptos"                     => isset($dadosEntrevista) ? count($dadosEntrevista) : 0,
+                "jaAgendadosAnteriormente"  => 0,   //TODO: Verificar fluxo de agendados anteriormente
+                "documentos_agendamentos"   => [],  //TODO: Verificar fluxo de documentos
+                "beneficiarios_criados"     => $beneficiarios
+            ];
         } catch (\IntegrationHub\Exception\CurlRequestException $e) {
             syslog(LOG_NOTICE, "[HUB][ERR] - " . $e->getMessage());
             return [ "retcode" => -1, "message" => $e->getMessage() ];

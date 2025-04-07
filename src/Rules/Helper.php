@@ -34,4 +34,13 @@ class Helper {
     {
         return preg_replace("/[^0-9]/", "", $str);
     }
+
+    public static function splitIBGE(int $codigoIBGE): array
+    {
+        return [
+            "ESTADO"        => substr($codigoIBGE, 0, 2),
+            "MUNICIPIO"     => substr($codigoIBGE, 2, 4),
+            "VERIFICADOR"   => substr($codigoIBGE, 6, 1)
+        ];
+    }
 }
